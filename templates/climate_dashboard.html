@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Air Secure — Live Climate Analysis</title>
+    <title>Climora — Real-time Climate Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#a855f7">
@@ -103,9 +103,9 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="brand" style="text-decoration:none;">
-            <i class="ph-fill ph-sun-dim"></i>
-            ClimaLens
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='icons/logo.png') }}" alt="Climora">
+            Climora
         </a>
         <div class="nav-links">
             <a href="/">Overview</a>

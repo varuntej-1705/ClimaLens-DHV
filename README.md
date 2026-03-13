@@ -1,6 +1,6 @@
-# ClimaLens — Climate Risk Monitoring & Urban Heat Vulnerability
+# Climora — Climate Risk Monitoring & Urban Heat Vulnerability
 
-ClimaLens is a professional climate risk monitoring system that analyzes real-time climate data (Temperature, Humidity) and Air Quality Index (AQI) data (PM2.5, PM10, NO2, Ozone) to detect urban heat vulnerability zones across major Indian cities using Machine Learning.
+Climora is a professional climate risk monitoring system that analyzes real-time climate data (Temperature, Humidity) and Air Quality Index (AQI) data (PM2.5, PM10, NO2, Ozone) to detect urban heat vulnerability zones across major Indian cities using Machine Learning.
 
 ## Features
 - **Real-time Data Collection**: Integrated with OpenWeatherMap and AQICN APIs for live environmental monitoring.

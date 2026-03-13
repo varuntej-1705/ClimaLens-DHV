@@ -1,4 +1,4 @@
-const CACHE_NAME = 'climalens-v1';
+const CACHE_NAME = 'climora-v1';
 const ASSETS = [
     '/',
     '/static/css/style.css',
