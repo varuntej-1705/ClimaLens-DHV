@@ -100,8 +100,19 @@
             letter-spacing: 1px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+        /* Light map popup styling */
+        .custom-popup-light .leaflet-popup-content-wrapper {
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid #ddd !important;
+            border-radius: 1rem !important;
+            color: #111 !important;
+            padding: 0.5rem !important;
+        }
+        .custom-popup-light .leaflet-popup-tip { background: white !important; }
+
         @media (max-width: 768px) {
-            .dashboard-container { padding: 1.5rem 1rem; height: calc(100vh - 140px); }
+            .dashboard-container { padding: 1.5rem 1rem; height: calc(100vh - 140px); margin-top: 4rem; }
             .map-header { flex-direction: column; align-items: stretch; gap: 1rem; margin-bottom: 1.5rem; }
             .map-header h1 { font-size: 2.25rem; }
             .map-header p { font-size: 1rem; }
@@ -127,12 +138,15 @@
 
     <div class="dashboard-container">
         
-        <div class="map-header">
-            <div>
-                <h1>Risk Matrix Map</h1>
-                <p>Establishing geospatial vulnerability across key monitoring nodes.</p>
+        <div class="city-header" style="border-bottom: 1px solid var(--glass-border); padding: 1rem 0 2rem 0; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 1.5rem !important;">
+            <div class="city-title" style="display: flex !important; align-items: baseline !important; gap: 1rem !important; flex-wrap: wrap !important; width: 100% !important;">
+                <h1 id="ui-city-name" style="font-weight: 800 !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin: 0 !important; font-size: 2.2rem !important; display: inline-block !important; line-height: 1 !important;">Loading...</h1>
+                <p id="ui-condition" style="color: var(--text-secondary) !important; font-size: 1.1rem !important; font-weight: 500 !important; margin: 0 !important; display: inline-block !important;">Syncing Matrix...</p>
             </div>
-            <div class="badge" style="background: var(--grad-orange); padding: 0.5rem 1.5rem; border-radius: 2rem; font-weight: 700;">Live Sensor Feed</div>
+            <div class="search-mini" style="width: 100%; display: flex; gap: 0.75rem;">
+                <input type="text" id="city-search" placeholder="Enter city name..." autocomplete="off" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; padding: 0.85rem 1.5rem; border-radius: 1rem; flex: 2; min-width: 200px;">
+                <button onclick="searchCity()" class="btn-primary" style="padding: 0.85rem 2rem; border-radius: 1rem; flex: 1; font-weight: 800;">Analyze</button>
+            </div>
         </div>
 
         <div class="map-wrapper">
@@ -154,8 +168,8 @@
             // Center roughly on India
             map = L.map('live-map').setView([21.0, 78.0], 5);
 
-            // DARK THEME map tiles
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            // LIGHT THEME map tiles (Real geographical look)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 20
@@ -213,6 +227,13 @@
                  .bindPopup(popupHtml, { className: 'custom-popup', maxWidth: 300 })
                  .addTo(markerLayerGroup);
             });
+        }
+
+        function searchCity() {
+            const query = document.getElementById('city-search').value;
+            if (query.trim() !== '') {
+                window.location.href = `/map?city=${encodeURIComponent(query)}`;
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
