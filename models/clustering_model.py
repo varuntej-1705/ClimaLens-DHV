@@ -1,5 +1,5 @@
 """
-ClimaLens — ML Clustering Model (Live Data Adaptation)
+Climora — ML Clustering Model (Live Data Adaptation)
 PCA dimensionality reduction + K-Means clustering to classify
 urban areas into heat vulnerability risk levels.
 """

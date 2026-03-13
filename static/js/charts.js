@@ -1,5 +1,5 @@
 /**
- * ClimaLens — Chart Rendering & Interactivity
+ * Climora — Chart Rendering & Interactivity
  * Plotly chart helpers, Leaflet map init, and UI controls.
  */
 

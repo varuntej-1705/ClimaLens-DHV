@@ -1,5 +1,5 @@
 """
-ClimaLens — In-Memory Data Pipeline
+Climora — In-Memory Data Pipeline
 Prepares live WeatherAPI data using Pandas for preprocessing and feature engineering
 before it reaches the ML and visualization layers.
 """

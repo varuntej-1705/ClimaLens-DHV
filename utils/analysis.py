@@ -1,5 +1,5 @@
 """
-ClimaLens — Heatwave Trend Analysis Module
+Climora — Heatwave Trend Analysis Module
 Analyzes temperature trends, seasonal patterns, and heatwave events.
 """
 
