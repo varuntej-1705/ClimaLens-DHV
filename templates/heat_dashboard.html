@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimaLens — Urban Heat Vulnerability Clustering</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#a855f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        .dashboard-container {
+            padding: 3rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            margin-bottom: 3rem;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .dashboard-header h1 { 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+            letter-spacing: -2px; 
+            background: linear-gradient(to right, #ffffff, #a855f7); 
+            -webkit-background-clip: text; 
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem; 
+        }
+        .dashboard-header p { color: var(--text-secondary); font-size: 1.25rem; font-weight: 500; max-width: 900px; line-height: 1.6; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .metric-card:hover { transform: translateY(-5px); }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            padding: 1.25rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .metric-data h3 { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .metric-data p { font-size: 2.25rem; font-weight: 900; color: white; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .chart-section {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .error-state { color: var(--risk-high); padding: 3rem; text-align: center; }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1.5rem 1rem; padding-bottom: 5rem; }
+            .dashboard-header h1 { font-size: 2.25rem; letter-spacing: -1px; }
+            .dashboard-header p { font-size: 1rem; }
+            .metric-card { padding: 1.25rem; gap: 1rem; }
+            .metric-icon { font-size: 1.75rem; padding: 0.75rem; }
+            .metric-data p { font-size: 1.5rem; }
+            .chart-section { padding: 1rem; }
+            #scatter-chart, #temp-aqi-chart { height: 350px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="brand" style="text-decoration:none;">
+            <i class="ph-fill ph-sun-dim"></i>
+            ClimaLens
+        </a>
+        <div class="nav-links">
+            <a href="/">Overview</a>
+            <a href="/climate" class="active">Heat Analysis</a>
+            <a href="/aqi">AQI & Pollutants</a>
+            <a href="/map">Vulnerability Map</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        
+        <div class="dashboard-header">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div class="badge" style="background: var(--grad-purple); padding: 0.4rem 1.25rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 800;">ML CORE ACTIVE</div>
+                <div class="badge" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 0.4rem 1.25rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 700;">K-MEANS CLUSTERING</div>
+            </div>
+            <h1>Urban Heat Vulnerability</h1>
+            <p>Advanced K-Means algorithm classifying metropolitan zones into risk clusters by multidimensional environmental vectors.</p>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <i class="ph-fill ph-brain metric-icon" style="color:#a855f7; background: rgba(168, 85, 247, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>AI System Status</h3>
+                    <p>Live Matrix</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <i class="ph-fill ph-city metric-icon" style="color:#6366f1; background: rgba(99, 102, 241, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>Nodes Analyzed</h3>
+                    <p id="ui-analyzed">--</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <i class="ph-fill ph-warning-circle metric-icon" style="color:#ef4444; background: rgba(239, 68, 68, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>High Risk Zones</h3>
+                    <p id="ui-high-risk">--</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-section">
+                <div id="scatter-chart" style="width:100%; height:550px;"></div>
+            </div>
+            <div class="chart-section">
+                <div id="temp-aqi-chart" style="width:100%; height:550px;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span id="last-updated">Matrix Syncing...</span>
+    </div>
+
+    <script>
+        async function fetchClusteringData() {
+            try {
+                const response = await fetch('/api/live/clustering');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('error-container').innerHTML = '';
+                    updateUI(result.data, result.timestamp);
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                showError("Connection lost. Retrying next tick...");
+            }
+        }
+
+        function updateUI(data, timestamp) {
+            document.getElementById('ui-analyzed').textContent = data.total_analyzed;
+            document.getElementById('ui-high-risk').textContent = data.high_risk_count;
+            
+            document.getElementById('last-updated').textContent = `Live Model • Updated ${timestamp}`;
+            
+            Plotly.react('scatter-chart', data.scatter_chart.data, data.scatter_chart.layout, {responsive: true});
+            Plotly.react('temp-aqi-chart', data.temp_aqi_chart.data, data.temp_aqi_chart.layout, {responsive: true});
+        }
+
+        function showError(msg) {
+            document.getElementById('error-container').innerHTML = `<div class="error-state"><i class="ph-fill ph-warning-circle"></i> ${msg}</div>`;
+            document.getElementById('last-updated').textContent = "Error";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchClusteringData();
+            // 10s auto-refresh for ML model
+            setInterval(fetchClusteringData, 10000);
+
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.error("Service Worker Failed", err));
+            }
+        });
+    </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/">
+            <i class="ph-bold ph-house"></i>
+            <span>Overview</span>
+        </a>
+        <a href="/climate" class="active">
+            <i class="ph-bold ph-thermometer"></i>
+            <span>Heat</span>
+        </a>
+        <a href="/aqi">
+            <i class="ph-bold ph-wind"></i>
+            <span>AQI</span>
+        </a>
+        <a href="/map">
+            <i class="ph-bold ph-map-trifold"></i>
+            <span>Map</span>
+        </a>
+        <a href="/settings">
+            <i class="ph-bold ph-gear"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+</body>
+</html>

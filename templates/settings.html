@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — ClimaLens</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#a855f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .dashboard-container { padding: 3rem 2rem; max-width: 1400px; margin: 0 auto; }
+        .settings-card { background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--border-radius); padding: 2.5rem; backdrop-filter: blur(10px); box-shadow: var(--card-shadow); margin-bottom: 2rem; }
+        .card-title { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        .input-box { width: 100%; padding: 1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 1rem; color: white; font-family: monospace; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; border-bottom: 1px solid var(--glass-border); }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-info h4 { font-size: 1.1rem; color: white; margin-bottom: 4px; }
+        .setting-info p { font-size: 0.85rem; color: var(--text-secondary); }
+        .selector { background: #1a1a1a; color: white; border: 1px solid var(--glass-border); padding: 0.5rem 1rem; border-radius: 0.75rem; }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1.5rem 1rem; padding-bottom: 5rem; }
+            .settings-card { padding: 1.5rem; }
+            .setting-item { flex-direction: column; align-items: stretch; gap: 1rem; }
+            .selector { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="brand" style="text-decoration:none;">
+            <i class="ph-fill ph-sun-dim"></i>
+            ClimaLens
+        </a>
+        <div class="nav-links">
+            <a href="/">Overview</a>
+            <a href="/climate">Heat Analysis</a>
+            <a href="/aqi">AQI & Pollutants</a>
+            <a href="/map">Vulnerability Map</a>
+            <a href="/settings" class="active">Settings</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header" style="margin-bottom: 3rem;">
+            <h1 style="font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; background: linear-gradient(to right, #ffffff, #a855f7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">System Settings</h1>
+            <p style="color: var(--text-secondary); font-size: 1.25rem; font-weight: 500;">Configure API collection, data processing, and dashboard preferences</p>
+        </div>
+
+        <div class="settings-card">
+            <div class="card-title"><i class="ph ph-key" style="color: var(--accent-purple);"></i> API Configuration</div>
+            <p style="color:var(--text-secondary); margin-bottom: 1.5rem;">The system uses OpenWeatherMap and AQICN APIs. Keys are managed via the .env file.</p>
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase;">OpenWeatherMap API Key</label>
+                <input type="text" class="input-box" value="56be9ff42bxxxxxxxxxxxxxxxxxxxx" readonly>
+                <p style="font-size: 0.75rem; color: #10B981; margin-top: 0.5rem; font-weight: 700;">● Status: Active & Validated</p>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <div class="card-title"><i class="ph ph-arrows-clockwise" style="color: #3b82f6;"></i> Data Preferences</div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Auto-Refresh Interval</h4>
+                    <p>Frequency of climate data updates from APIs</p>
+                </div>
+                <select class="selector">
+                    <option>5 Minutes</option>
+                    <option selected>10 Minutes</option>
+                    <option>30 Minutes</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>ML Retraining</h4>
+                    <p>Retrain K-Means clustering when data points exceed threshold</p>
+                </div>
+                <div class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981; padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 800;">ENABLED</div>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <div class="card-title"><i class="ph ph-broadcast" style="color: #f59e0b;"></i> Monitored Regions</div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                {% for city in cities %}
+                <span class="badge" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.8rem;">{{ city }}</span>
+                {% endfor %}
+                <button class="badge" style="background:rgba(168, 85, 247, 0.1); color: var(--accent-purple); border: 1px dashed var(--accent-purple); cursor:pointer; padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 800;">+ Add Region</button>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; margin-bottom: 4rem;">
+            <button class="btn-primary" style="padding: 1rem 2rem; border-radius: 1rem;">Save Settings</button>
+            <button class="btn-secondary" style="padding: 1rem 2rem; border-radius: 1rem; border-color: #ef4444; color: #ef4444;">Reset Dataset</button>
+        </div>
+    </div>
+
+    <div class="refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span id="last-updated">System Active</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.error("Service Worker Failed", err));
+            }
+        });
+    </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/">
+            <i class="ph-bold ph-house"></i>
+            <span>Overview</span>
+        </a>
+        <a href="/climate">
+            <i class="ph-bold ph-thermometer"></i>
+            <span>Heat</span>
+        </a>
+        <a href="/aqi">
+            <i class="ph-bold ph-wind"></i>
+            <span>AQI</span>
+        </a>
+        <a href="/map">
+            <i class="ph-bold ph-map-trifold"></i>
+            <span>Map</span>
+        </a>
+        <a href="/settings" class="active">
+            <i class="ph-bold ph-gear"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+</body>
+</html>

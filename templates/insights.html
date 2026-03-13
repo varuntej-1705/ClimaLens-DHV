@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimaLens — Data Insights & Adaptation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#a855f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .dashboard-container {
+            padding: 3rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .dashboard-header {
+            margin-bottom: 3rem;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .dashboard-header h1 { 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+            letter-spacing: -2px; 
+            background: linear-gradient(to right, #ffffff, #a855f7); 
+            -webkit-background-clip: text; 
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem; 
+        }
+        .dashboard-header p { color: var(--text-secondary); font-size: 1.25rem; font-weight: 500; max-width: 900px; line-height: 1.6; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .metric-card:hover { transform: translateY(-5px); }
+
+        .metric-icon { font-size: 2.5rem; padding: 1.25rem; border-radius: 1.25rem; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+        .metric-data h3 { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .metric-data p { font-size: 2.25rem; font-weight: 900; color: white; }
+
+        .chart-section {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 4rem;
+        }
+
+        .chart-title { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; letter-spacing: -0.5px;}
+        
+        /* Table Styles - Premium Glass */
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .data-table th, .data-table td { padding: 1.25rem; text-align: left; border-bottom: 1px solid var(--glass-border); }
+        .data-table th { background: rgba(255,255,255,0.02); font-weight: 700; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+        .data-table td { color: white; font-weight: 500; }
+        
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+        .strategy-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s;
+        }
+        .strategy-card:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+        
+        .strategy-icon { font-size: 3rem; margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .strategy-title { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 1rem; letter-spacing: -0.5px; }
+        .strategy-desc { color: var(--text-secondary); font-size: 1rem; margin-bottom: 1.5rem; line-height: 1.7;}
+        .strategy-impact { 
+            display: inline-block;
+            font-size: 0.85rem; 
+            font-weight: 800; 
+            color: #10B981; 
+            background: rgba(16, 185, 129, 0.1); 
+            padding: 0.4rem 1rem; 
+            border-radius: 2rem; 
+            text-transform: uppercase;
+        }
+
+        .risk-badge { padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .risk-high { background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .risk-medium { background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .risk-low { background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1.5rem 1rem; padding-bottom: 5rem; }
+            .dashboard-header h1 { font-size: 2.25rem; letter-spacing: -1px; }
+            .dashboard-header p { font-size: 1rem; }
+            .metric-card { padding: 1.25rem; gap: 1rem; }
+            .metric-icon { font-size: 1.75rem; padding: 0.75rem; }
+            .metric-data p { font-size: 1.5rem; }
+            .chart-section { padding: 1rem; overflow-x: auto; }
+            .data-table th, .data-table td { padding: 0.75rem; font-size: 0.7rem; }
+            .strategy-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .strategy-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="brand" style="text-decoration:none;">
+            <i class="ph-fill ph-sun-dim"></i>
+            ClimaLens
+        </a>
+        <div class="nav-links">
+            <a href="/">Overview</a>
+            <a href="/climate">Heat Analysis</a>
+            <a href="/aqi">AQI & Pollutants</a>
+            <a href="/map">Vulnerability Map</a>
+            <a href="/insights" class="active">Insights</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        
+        <div class="dashboard-header">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div class="badge" style="background: var(--grad-purple); padding: 0.4rem 1.25rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 800;">DATA PIPELINE ACTIVE</div>
+            </div>
+            <h1>Adaptation Intelligence</h1>
+            <p>Live summary of national climate vectors, data quality monitoring, and algorithmic mitigation strategies for urban centers.</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <i class="ph-fill ph-thermometer metric-icon" style="color:#f59e0b; background: rgba(245, 158, 11, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>National Matrix Temp</h3>
+                    <p id="ui-avg-temp">--°C</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <i class="ph-fill ph-wind metric-icon" style="color:#3b82f6; background: rgba(59, 130, 246, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>National Mean AQI</h3>
+                    <p id="ui-avg-aqi">--</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <i class="ph-fill ph-warning metric-icon" style="color:#ef4444; background: rgba(239, 68, 68, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>High Risk Nodes</h3>
+                    <p id="ui-high-risk">--</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <i class="ph-fill ph-database metric-icon" style="color:#a855f7; background: rgba(168, 85, 247, 0.1);"></i>
+                <div class="metric-data">
+                    <h3>Processed Records</h3>
+                    <p id="ui-total-records">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outlier Report -->
+        <div class="chart-section">
+            <div class="chart-title"><i class="ph-fill ph-magnifying-glass" style="color: #a855f7;"></i> Matrix Analysis: Z-Score Anomaly Report</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Environmental Metric</th>
+                        <th>Anomaly Count</th>
+                        <th>% Variance</th>
+                        <th>System Status</th>
+                    </tr>
+                </thead>
+                <tbody id="outlier-table-body">
+                    <tr><td colspan="4" style="text-align:center; opacity:0.5; padding: 3rem;">Scanning data stream for anomalies...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dashboard-header" style="margin-top: 4rem; border-bottom: none;">
+            <h2 style="font-size: 2.5rem; font-weight: 900; color: white; letter-spacing: -1.5px;">Urban Heat Mitigation</h2>
+            <p>Algorithmic interventions prioritized by current environmental risk patterns.</p>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="strategy-card">
+                <div class="strategy-icon">🌳</div>
+                <div class="strategy-title">Urban Canopy Expansion</div>
+                <div class="strategy-desc">Integrate native shade architecture to reduce ambient thermal energy through bioclimatic evapotranspiration.</div>
+                <div class="strategy-impact">↓ Est. 2–8°C Delta</div>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">🏢</div>
+                <div class="strategy-title">Cool-Matrix Infrastructure</div>
+                <div class="strategy-desc">Deploy ultra-reflective albedo coatings to minimize thermal absorption in high-density urban canyons.</div>
+                <div class="strategy-impact">↓ Est. 30°C Surface Delta</div>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">💨</div>
+                <div class="strategy-title">Macro-Ventilation Corridors</div>
+                <div class="strategy-desc">Calibrate urban density to facilitate natural convective cooling and prevent heat island accumulation.</div>
+                <div class="strategy-impact">↑ Kinetic Cooling Enhanced</div>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">🌿</div>
+                <div class="strategy-title">Bio-Insulated Rooftops</div>
+                <div class="strategy-desc">Transform active surfaces into living insulation layers to suppress HVAC energy demand by up to 25%.</div>
+                <div class="strategy-impact">↓ 25% Energy Efficiency</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span id="last-updated">Updating...</span>
+    </div>
+
+    <script>
+        async function fetchInsightsData() {
+            try {
+                const response = await fetch('/api/live/insights');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Update top metrics
+                    document.getElementById('ui-avg-temp').textContent = result.stats.avg_temp + '°C';
+                    document.getElementById('ui-avg-aqi').textContent = result.stats.avg_aqi;
+                    document.getElementById('ui-high-risk').textContent = result.stats.high_risk_cities;
+                    document.getElementById('ui-total-records').textContent = result.stats.monitored_cities;
+                    
+                    // Update Outlier Table
+                    const tbody = document.getElementById('outlier-table-body');
+                    tbody.innerHTML = '';
+                    
+                    for (const [metric, info] of Object.entries(result.outliers)) {
+                        let badgeClass = 'risk-low';
+                        let statusText = 'Normal';
+                        
+                        if (info.percentage >= 5) {
+                            badgeClass = 'risk-high';
+                            statusText = 'Anomaly';
+                        } else if (info.percentage >= 2) {
+                            badgeClass = 'risk-medium';
+                            statusText = 'Watch';
+                        }
+                        
+                        tbody.insertAdjacentHTML('beforeend', `
+                            <tr>
+                                <td>${metric}</td>
+                                <td>${info.count}</td>
+                                <td>${info.percentage}%</td>
+                                <td><span class="risk-badge ${badgeClass}">${statusText}</span></td>
+                            </tr>
+                        `);
+                    }
+                    
+                    document.getElementById('last-updated').textContent = `Live Analysis • Updated ${result.timestamp}`;
+                }
+            } catch (error) {
+                console.error("Failed to fetch insights:", error);
+                document.getElementById('last-updated').textContent = "Connection lost. Retrying...";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchInsightsData();
+            setInterval(fetchInsightsData, 10000); 
+
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.error("Service Worker Failed", err));
+            }
+        });
+    </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/">
+            <i class="ph-bold ph-house"></i>
+            <span>Overview</span>
+        </a>
+        <a href="/climate">
+            <i class="ph-bold ph-thermometer"></i>
+            <span>Heat</span>
+        </a>
+        <a href="/aqi">
+            <i class="ph-bold ph-wind"></i>
+            <span>AQI</span>
+        </a>
+        <a href="/map">
+            <i class="ph-bold ph-map-trifold"></i>
+            <span>Map</span>
+        </a>
+        <a href="/settings">
+            <i class="ph-bold ph-gear"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+</body>
+</html>

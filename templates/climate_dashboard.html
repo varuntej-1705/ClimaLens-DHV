@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Secure — Live Climate Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#a855f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        .dashboard-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .city-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .city-title h1 { font-size: 2.5rem; color: var(--text-primary); margin-bottom: 0.5rem; }
+        .city-title p { color: var(--text-secondary); font-size: 1.1rem; }
+        
+        .search-mini {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .search-mini input { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
+        .search-mini button { padding: 0.5rem 1rem; border-radius: 0.5rem; background: var(--accent-blue); color: white; border: none; cursor: pointer; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+
+        .metric-data h3 { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 500;}
+        .metric-data p { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+
+        .chart-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .error-state { color: var(--risk-high); padding: 2rem; text-align: center; }
+
+        /* Centering the generator container */
+        #dynamic-viz-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1rem; padding-bottom: 5rem; }
+            .city-header { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+            .city-title h1 { font-size: 2rem; }
+            .metric-card { padding: 1rem; gap: 1rem; }
+            .metric-icon { font-size: 1.75rem; padding: 0.75rem; }
+            .metric-data p { font-size: 1.25rem; }
+            .default-viz-grid { grid-template-columns: 1fr; }
+            .chart-section { padding: 1rem; }
+            #dynamic-viz-container { min-height: 350px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="brand" style="text-decoration:none;">
+            <i class="ph-fill ph-sun-dim"></i>
+            ClimaLens
+        </a>
+        <div class="nav-links">
+            <a href="/">Overview</a>
+            <a href="/climate" class="active">Heat Analysis</a>
+            <a href="/aqi">AQI & Pollutants</a>
+            <a href="/map">Vulnerability Map</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        
+        <div class="city-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 2rem;">
+            <div class="city-title">
+                <h1 id="ui-city-name" style="font-weight: 900; letter-spacing: -1.5px; background: linear-gradient(to right, #ffffff, #a855f7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Loading Matrix...</h1>
+                <p id="ui-condition" style="color: var(--text-secondary); font-size: 1.2rem; font-weight: 500;">Establishing secure connection</p>
+            </div>
+            <div class="search-mini" style="flex-wrap: wrap; width: 100%;">
+                <input type="text" id="city-search" placeholder="Enter city name..." autocomplete="off" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; padding: 0.75rem 1.5rem; border-radius: 1rem; flex: 1; min-width: 200px; margin-bottom: 0.5rem;">
+                <button onclick="searchCity()" class="btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 1rem; flex: 1;">Analyze</button>
+            </div>
+        </div>
+
+        <div id="error-container"></div>
+
+        <!-- ─── Core Metrics Grid ─── -->
+        <div class="metrics-grid">
+            <div class="metric-card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(15, 17, 19, 0.1) 100%);">
+                <i class="ph-fill ph-thermometer metric-icon" style="color:#ef4444; background: rgba(239, 68, 68, 0.1); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);"></i>
+                <div class="metric-data">
+                    <h3>Temperature</h3>
+                    <p id="ui-temp">--</p>
+                </div>
+            </div>
+            <div class="metric-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(15, 17, 19, 0.1) 100%);">
+                <i class="ph-fill ph-drop metric-icon" style="color:#3b82f6; background: rgba(59, 130, 246, 0.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);"></i>
+                <div class="metric-data">
+                    <h3>Humidity</h3>
+                    <p id="ui-humidity">--</p>
+                </div>
+            </div>
+            <div class="metric-card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 17, 19, 0.1) 100%);">
+                <i class="ph-fill ph-wind metric-icon" style="color:#a855f7; background: rgba(168, 85, 247, 0.1); box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);"></i>
+                <div class="metric-data">
+                    <h3>Wind Speed</h3>
+                    <p id="ui-wind">--</p>
+                </div>
+            </div>
+            <div class="metric-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 17, 19, 0.1) 100%);">
+                <i class="ph-fill ph-sun metric-icon" style="color:#f59e0b; background: rgba(245, 158, 11, 0.1); box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);"></i>
+                <div class="metric-data">
+                    <h3>UV Index</h3>
+                    <p id="ui-uv">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── Default 4 Visualizations (Matrix Grid) ─── -->
+        <h2 style="margin-bottom: 2rem; font-weight: 800; color: white;">Matrix Baseline (Default Dash)</h2>
+        <div class="default-viz-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); gap: 1.5rem; margin-bottom: 4rem;">
+            <div class="chart-section">
+                <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-secondary);">Temperature Trend Analysis</h3>
+                <div id="def-viz-temp" style="width:100%; height:350px;"></div>
+            </div>
+            <div class="chart-section">
+                <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-secondary);">AQI Risk Matrix (National)</h3>
+                <div id="def-viz-aqi" style="width:100%; height:350px;"></div>
+            </div>
+            <div class="chart-section">
+                <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-secondary);">Humidity Distribution</h3>
+                <div id="def-viz-humidity" style="width:100%; height:350px;"></div>
+            </div>
+            <div class="chart-section">
+                <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-secondary);">Heat Risk Index Profile</h3>
+                <div id="def-viz-risk" style="width:100%; height:350px;"></div>
+            </div>
+        </div>
+
+        <!-- ─── Dynamic Visualization Generator Control Panel ─── -->
+        <div class="chart-section" style="background: rgba(255, 255, 255, 0.03); border: 2px solid var(--accent-purple); padding: 2.5rem; margin-bottom: 3rem; text-align: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                <div style="text-align: left;">
+                    <h2 style="font-size: 1.75rem; font-weight: 800; color: white; letter-spacing: -0.5px; margin-bottom: 0.25rem;">
+                        <i class="ph ph-magic-wand" style="color: var(--accent-purple); margin-right: 0.5rem;"></i>
+                        Advanced DHV Generator
+                    </h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Synthesize multidimensional climate matrices</p>
+                </div>
+                <div class="badge" style="background: var(--grad-purple); padding: 0.5rem 1.25rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 800;">DATA SCIENCE CORE</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto 2.5rem auto;">
+                <div class="input-group">
+                    <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Primary Variable (X)</label>
+                    <select id="gen-variable" style="width: 100%; background: #1a1a1a; border: 1px solid var(--glass-border); color: white; padding: 0.85rem; border-radius: 0.75rem;">
+                        <option value="Temperature">Temperature</option>
+                        <option value="AQI">AQI Index</option>
+                        <option value="Humidity">Humidity</option>
+                        <option value="PM25">PM2.5 Level</option>
+                        <option value="PM10">PM10 Level</option>
+                        <option value="NO2">NO2 Level</option>
+                        <option value="Ozone">Ozone Level</option>
+                        <option value="Heat_Risk_Score">Heat Risk Score</option>
+                    </select>
+                </div>
+                <!-- Variable Y - Dynamic Visibility -->
+                <div class="input-group" id="group-var-y">
+                    <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Secondary Variable (Y)</label>
+                    <select id="gen-variable-y" style="width: 100%; background: #1a1a1a; border: 1px solid var(--glass-border); color: white; padding: 0.85rem; border-radius: 0.75rem;">
+                        <option value="AQI">AQI Index</option>
+                        <option value="Temperature">Temperature</option>
+                        <option value="Humidity">Humidity</option>
+                        <option value="PM25">PM2.5 Level</option>
+                        <option value="Heat_Risk_Score">Heat Risk Score</option>
+                        <option value="Wind_kph">Wind Speed</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Chart Type</label>
+                    <select id="gen-type" onchange="toggleSecondaryVar()" style="width: 100%; background: #1a1a1a; border: 1px solid var(--glass-border); color: white; padding: 0.85rem; border-radius: 0.75rem;">
+                        <option value="bar">Comparative Bar</option>
+                        <option value="scatter">Correlation Scatter</option>
+                        <option value="line">Dual Line Trend</option>
+                        <option value="bubble">Bubble Plot (X, Y, Size)</option>
+                        <option value="radar">Multivariate Radar</option>
+                        <option value="pie">Distribution Pie (X)</option>
+                        <option value="histogram">Frequency Histogram</option>
+                        <option value="box">Variance Box Plot</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Scope</label>
+                    <select id="gen-scope" style="width: 100%; background: #1a1a1a; border: 1px solid var(--glass-border); color: white; padding: 0.85rem; border-radius: 0.75rem;">
+                        <option value="national">National Matrix</option>
+                        <option value="city">City Focus</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="generateCustomViz()" class="btn-primary" style="width: 100%; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 1rem; box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);">Synthesize</button>
+                </div>
+            </div>
+            
+            <div id="dynamic-viz-container" style="width: 100%; height: 550px; margin-top: 1rem; background: rgba(0,0,0,0.3); border-radius: 1.5rem; border: 1px solid var(--glass-border); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    <i class="ph ph-atom" style="font-size: 3.5rem; margin-bottom: 1.5rem; opacity: 0.2; display: block; margin-left: auto; margin-right: auto;"></i>
+                    <p style="font-size: 1.1rem; font-weight: 500;">Awaiting Matrix Parameters...</p>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.6;">Select variables to generate multidimensional analysis</p>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span id="last-updated">Updating...</span>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentCity = urlParams.get('city') || 'New Delhi';
+
+        let fullDataset = [];
+
+        async function fetchLiveData() {
+            try {
+                // Fetch current city data and bulk data in parallel for speed
+                const [cityRes, vizRes] = await Promise.all([
+                    fetch(`/api/live/city?q=${encodeURIComponent(currentCity)}`).then(r => r.json()),
+                    fetch('/api/viz/data').then(r => r.json())
+                ]);
+                
+                if (cityRes.status === 'success') {
+                    document.getElementById('error-container').innerHTML = '';
+                    updateUI(cityRes.data, cityRes.timestamp);
+                    
+                    // Update fullDataset immediately
+                    if (vizRes.status === 'success') {
+                        fullDataset = vizRes.data;
+                        // Ensure current city is in the set
+                        if (!fullDataset.some(d => d.City.toLowerCase() === currentCity.toLowerCase())) {
+                            fullDataset.push(cityRes.data);
+                        }
+                    } else if (fullDataset.length === 0) {
+                        fullDataset = [cityRes.data];
+                    }
+                    
+                    renderDefaultCharts();
+                    // Generate a default custom viz to show it's working
+                    if (container.querySelector('i.ph-atom')) {
+                        generateCustomViz(); 
+                    }
+                } else {
+                    showError(cityRes.message);
+                }
+            } catch (error) {
+                console.error("Critical Sync Error:", error);
+                // If it was just a timeout, we keep the old data instead of showing a big red error
+                if (fullDataset.length > 0) {
+                    document.getElementById('last-updated').textContent = "Sync Latency (Cached)";
+                } else {
+                    showError("Relay latency detected. Synchronizing Matrix...");
+                }
+            }
+        }
+
+        function updateUI(data, timestamp) {
+            document.getElementById('ui-city-name').textContent = `${data.City}, ${data.Country}`;
+            document.getElementById('ui-condition').textContent = `Local time: ${data.LocalTime} • ${data.Condition}`;
+            
+            document.getElementById('ui-temp').textContent = `${data.Temperature}°C`;
+            document.getElementById('ui-humidity').textContent = `${data.Humidity}%`;
+            document.getElementById('ui-wind').textContent = `${data.Wind_kph} kph`;
+            document.getElementById('ui-uv').textContent = `${data.UV}`;
+            
+            document.getElementById('last-updated').textContent = `Live • Updated ${timestamp}`;
+        }
+
+        function renderDefaultCharts() {
+            if (fullDataset.length === 0) return;
+
+            const cities = fullDataset.map(d => d.City);
+            const commonLayout = {
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                font: { family: "Inter, sans-serif", color: "rgba(255,255,255,0.7)" },
+                margin: { t: 30, r: 20, l: 40, b: 60 },
+                xaxis: { gridcolor: "rgba(255,255,255,0.05)", zeroline: false },
+                yaxis: { gridcolor: "rgba(255,255,255,0.05)", zeroline: false }
+            };
+
+            // 1. Temp Bar
+            Plotly.newPlot('def-viz-temp', [{
+                x: cities, y: fullDataset.map(d => d.Temperature), type: 'bar', marker: { color: '#ef4444' }
+            }], commonLayout, {responsive: true, displayModeBar: false});
+
+            // 2. AQI Line
+            Plotly.newPlot('def-viz-aqi', [{
+                x: cities, y: fullDataset.map(d => d.AQI), type: 'scatter', mode: 'lines+markers', line: { color: '#10b981', shape: 'spline' }
+            }], commonLayout, {responsive: true, displayModeBar: false});
+
+            // 3. Humidity Box
+            Plotly.newPlot('def-viz-humidity', [{
+                y: fullDataset.map(d => d.Humidity), type: 'box', name: 'Humidity %', marker: { color: '#3b82f6' }
+            }], commonLayout, {responsive: true, displayModeBar: false});
+
+            // 4. Heat Risk Radar (for current city vs national)
+            const cityData = fullDataset.find(d => d.City.toLowerCase() === currentCity.toLowerCase()) || fullDataset[0];
+            const natAvg = fullDataset.reduce((a, b) => a + b.Heat_Risk_Score, 0) / fullDataset.length;
+            Plotly.newPlot('def-viz-risk', [{
+                x: [cityData.City, 'National Avg'], 
+                y: [cityData.Heat_Risk_Score, natAvg], 
+                type: 'bar', marker: { color: ['#a855f7', 'rgba(255,255,255,0.2)'] }
+            }], commonLayout, {responsive: true, displayModeBar: false});
+        }
+
+        function toggleSecondaryVar() {
+            const type = document.getElementById('gen-type').value;
+            const groupY = document.getElementById('group-var-y');
+            const needsDual = ['bar', 'scatter', 'line', 'bubble', 'radar'].includes(type);
+            groupY.style.opacity = needsDual ? '1' : '0.3';
+            groupY.style.pointerEvents = needsDual ? 'all' : 'none';
+        }
+
+        async function generateCustomViz() {
+            const container = document.getElementById('dynamic-viz-container');
+            container.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; gap:1rem;"><div class="pulse-dot" style="width:25px; height:25px; background:var(--accent-purple);"></div><div style="color:var(--accent-purple); font-weight:800; letter-spacing:2px; text-transform:uppercase; font-size:0.9rem;">Synthesizing Matrix...</div></div>';
+            
+            try {
+                const varX = document.getElementById('gen-variable').value;
+                const varY = document.getElementById('gen-variable-y').value;
+                const type = document.getElementById('gen-type').value;
+                const scope = document.getElementById('gen-scope').value;
+                
+                await new Promise(r => setTimeout(r, 800));
+                
+                if (fullDataset.length === 0) {
+                    location.reload(); // Safety refresh if data is lost
+                    return;
+                }
+
+                let dataToUse = fullDataset;
+                if (scope === 'city') {
+                    dataToUse = fullDataset.filter(d => d.City.toLowerCase() === currentCity.toLowerCase());
+                    if (dataToUse.length === 0) dataToUse = [fullDataset[0]];
+                }
+
+                // Sort for better visualization
+                dataToUse.sort((a, b) => b[varX] - a[varX]);
+
+                const xLabels = dataToUse.map(d => d.City);
+                const xValues = dataToUse.map(d => d[varX]);
+                const yValues = dataToUse.map(d => d[varY]);
+                
+                const commonLayout = {
+                    paper_bgcolor: "rgba(0,0,0,0)",
+                    plot_bgcolor: "rgba(0,0,0,0)",
+                    font: { family: "Inter, sans-serif", color: "rgba(255,255,255,0.8)" },
+                    margin: { t: 50, r: 30, l: 60, b: 100 },
+                    xaxis: { gridcolor: "rgba(255,255,255,0.05)", zeroline: false, title: scope === 'national' ? 'Cities' : varX },
+                    yaxis: { gridcolor: "rgba(255,255,255,0.05)", zeroline: false, title: varY }
+                };
+
+                container.innerHTML = '';
+                const chartDiv = document.createElement('div');
+                chartDiv.style.width = '100%';
+                chartDiv.style.height = '100%';
+                container.appendChild(chartDiv);
+
+                let plotData = [];
+                
+                if (type === 'bar') {
+                    plotData = [
+                        { x: xLabels, y: xValues, name: varX, type: 'bar', marker: { color: '#a855f7' } },
+                        { x: xLabels, y: yValues, name: varY, type: 'bar', marker: { color: '#10b181' } }
+                    ];
+                    commonLayout.barmode = 'group';
+                } else if (type === 'scatter') {
+                    plotData = [{
+                        x: xValues, y: yValues, mode: 'markers+text',
+                        text: xLabels, textposition: 'top center',
+                        marker: { size: 14, color: '#f59e0b', line: { color: 'white', width: 1 } },
+                        type: 'scatter'
+                    }];
+                    commonLayout.xaxis.title = varX;
+                    commonLayout.yaxis.title = varY;
+                } else if (type === 'line') {
+                    plotData = [
+                        { x: xLabels, y: xValues, name: varX, mode: 'lines+markers', line: { color: '#ef4444', width: 3, shape: 'spline' } },
+                        { x: xLabels, y: yValues, name: varY, mode: 'lines+markers', line: { color: '#3b82f6', width: 3, shape: 'spline' } }
+                    ];
+                } else if (type === 'bubble') {
+                    plotData = [{
+                        x: xValues, y: yValues, mode: 'markers',
+                        marker: {
+                            size: dataToUse.map(d => (d.Heat_Risk_Score || 1) * 2),
+                            color: dataToUse.map(d => d.AQI),
+                            colorscale: 'Viridis',
+                            showscale: true
+                        },
+                        text: xLabels,
+                        type: 'scatter'
+                    }];
+                    commonLayout.xaxis.title = varX;
+                    commonLayout.yaxis.title = varY;
+                } else if (type === 'radar') {
+                    const metrics = [varX, varY, 'Temperature', 'AQI', 'Humidity'].slice(0, 5);
+                    plotData = dataToUse.slice(0, 5).map((city, i) => ({
+                        type: 'scatterpolar',
+                        r: metrics.map(m => city[m]),
+                        theta: metrics,
+                        fill: 'toself',
+                        name: city.City
+                    }));
+                    commonLayout.polar = { bgcolor: 'rgba(0,0,0,0.1)', radialaxis: { visible: true, gridcolor: 'rgba(255,255,255,0.1)' } };
+                } else if (type === 'pie') {
+                    plotData = [{ labels: xLabels, values: xValues, type: 'pie', hole: 0.6, marker: { colorscale: 'Portland' } }];
+                } else if (type === 'histogram') {
+                    plotData = [{ x: xValues, type: 'histogram', marker: { color: '#6366f1' }, nbinsx: 15 }];
+                    commonLayout.xaxis.title = varX;
+                } else if (type === 'box') {
+                    plotData = [
+                        { y: xValues, type: 'box', name: varX, marker: { color: '#a855f7' } },
+                        { y: yValues, type: 'box', name: varY, marker: { color: '#10b181' } }
+                    ];
+                }
+
+                Plotly.newPlot(chartDiv, plotData, commonLayout, {responsive: true, displayModeBar: false});
+            } catch (err) {
+                console.error("Generator Error:", err);
+                container.innerHTML = '<div style="color:#ef4444; font-weight:700; padding:2rem;">Logic Matrix Mismatch. Check console for trace.</div>';
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('error-container').innerHTML = `<div class="error-state" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:1.5rem; padding:1.5rem; margin-bottom:2rem; backdrop-filter:blur(10px); animation: fadeIn 0.5s ease-out;"><i class="ph-fill ph-warning-circle" style="font-size:1.5rem; margin-right:0.5rem; vertical-align:middle;"></i> ${msg}</div>`;
+            document.getElementById('last-updated').textContent = "Matrix Error";
+        }
+
+        function searchCity() {
+            const query = document.getElementById('city-search').value;
+            if (query.trim() !== '') {
+                window.location.href = `/climate?city=${encodeURIComponent(query)}`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLiveData();
+            toggleSecondaryVar(); // Initialize view
+            // Refresh city data every 10s, but full viz data every 30s to save bandwidth/speed
+            setInterval(fetchLiveData, 15000); 
+
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.error("Service Worker Failed", err));
+            }
+        });
+
+    </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/">
+            <i class="ph-bold ph-house"></i>
+            <span>Overview</span>
+        </a>
+        <a href="/climate" class="active">
+            <i class="ph-bold ph-thermometer"></i>
+            <span>Heat</span>
+        </a>
+        <a href="/aqi">
+            <i class="ph-bold ph-wind"></i>
+            <span>AQI</span>
+        </a>
+        <a href="/map">
+            <i class="ph-bold ph-map-trifold"></i>
+            <span>Map</span>
+        </a>
+        <a href="/settings">
+            <i class="ph-bold ph-gear"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+</body>
+</html>

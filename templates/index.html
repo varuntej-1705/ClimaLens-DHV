@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimaLens — Climate Risk & Urban Heat Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#a855f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
+    <!-- Phosphor Icons for modern SVG icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="brand">
+            <i class="ph-fill ph-sun-dim"></i>
+            ClimaLens
+        </div>
+        <div class="nav-links">
+            <a href="/" class="active">Overview</a>
+            <a href="/climate">Heat Analysis</a>
+            <a href="/aqi">AQI & Pollutants</a>
+            <a href="/map">Vulnerability Map</a>
+        </div>
+    </nav>
+
+    <!-- Main Hero Section -->
+    <div class="hero-container">
+        <div class="hero-banner">
+            <h1>Urban Heat Vulnerability.</h1>
+            <p>Real-time monitoring of <strong>Climate Risk</strong>, extreme temperature patterns, and air quality across Indian cities to map vulnerability.</p>
+            
+            <form id="search-form" class="search-wrapper" onsubmit="event.preventDefault(); submitSearch();">
+                <input type="text" id="city-search" class="search-input" placeholder="Search a city for risk analysis..." autocomplete="off">
+                <button type="submit" class="btn-primary">Analyze Risk</button>
+            </form>
+            
+            <button class="btn-secondary" onclick="useLocation()">
+                <i class="ph ph-navigation-arrow"></i> My Local Vulnerability
+            </button>
+        </div>
+
+        <!-- Dynamic Leaderboards (populated via JS) -->
+        <div class="leaderboards-grid">
+            <!-- High Heat Risk -->
+            <div class="leaderboard-section">
+                <div class="section-header">
+                    <div class="dot-red"></div> Highest Heat Vulnerability Right Now
+                </div>
+                <div class="city-list" id="highest-risk-list">
+                    <div style="opacity:0.3; text-align:center; padding: 2rem;">Computing live matrix...</div>
+                </div>
+            </div>
+            
+            <!-- Extreme Temps -->
+            <div class="leaderboard-section">
+                <div class="section-header">
+                    <div class="dot-red" style="background: var(--grad-orange);"></div> Highest 'Feels Like' Temperatures
+                </div>
+                <div class="city-list" id="hottest-list">
+                    <div style="opacity:0.3; text-align:center; padding: 2rem;">Processing global nodes...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Auto-Refresh Indicator -->
+    <div class="refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span id="last-updated">Updating...</span>
+    </div>
+
+    <!-- JS for strictly real-time polling -->
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/" class="active">
+            <i class="ph-bold ph-house"></i>
+            <span>Overview</span>
+        </a>
+        <a href="/climate">
+            <i class="ph-bold ph-thermometer"></i>
+            <span>Heat</span>
+        </a>
+        <a href="/aqi">
+            <i class="ph-bold ph-wind"></i>
+            <span>AQI</span>
+        </a>
+        <a href="/map">
+            <i class="ph-bold ph-map-trifold"></i>
+            <span>Map</span>
+        </a>
+        <a href="/settings">
+            <i class="ph-bold ph-gear"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <script>
+        let pollInterval;
+
+        const MAJOR_CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai', 'Kolkata', 'Surat'];
+
+        async function fetchLiveData() {
+            try {
+                const response = await fetch('/api/live/summary');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Update leaderboards
+                    updateLeaderboard('highest-risk-list', result.leaderboards.highest_risk, 'bad');
+                    updateLeaderboard('hottest-list', result.leaderboards.hottest, 'bad');
+                    
+                    document.getElementById('last-updated').textContent = `Live • Updated ${result.timestamp}`;
+                }
+            } catch (error) {
+                console.error("Failed to fetch live data:", error);
+                document.getElementById('last-updated').textContent = "Connection lost. Retrying...";
+            }
+        }
+
+        function updateLeaderboard(elementId, cities, badgeClass) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; 
+            
+            cities.forEach(city => {
+                const html = `
+                    <a href="/climate?city=${encodeURIComponent(city.city)}" class="city-card" style="text-decoration: none; color: inherit; display: flex; width: 100%; align-items: center; padding: 1rem; border-radius: 0.75rem; border: 1px solid var(--border-color); margin-bottom: 0.75rem; transition: all 0.2s ease;">
+                        <div class="metric-badge ${badgeClass}" style="min-width: 4rem; text-align: center; font-weight: 700; padding: 0.5rem; border-radius: 0.5rem; margin-right: 1rem;">${city.value}</div>
+                        <div class="city-info" style="flex: 1;">
+                            <div class="city-name" style="font-weight: 600; color: var(--text-primary);">${city.city}</div>
+                            <div class="city-state" style="font-size: 0.75rem; color: var(--text-secondary);">${city.state} • ${city.condition}</div>
+                        </div>
+                        <div class="city-secondary" style="font-size: 0.875rem; color: var(--text-secondary); margin-right: 1rem;">${city.secondary}</div>
+                        <i class="ph ph-caret-right arrow-icon" style="color: var(--text-secondary); opacity: 0.5;"></i>
+                    </a>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function submitSearch() {
+            const query = document.getElementById('city-search').value;
+            if (query.trim() !== '') {
+                window.location.href = `/climate?city=${encodeURIComponent(query)}`;
+            }
+        }
+        
+        function useLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const query = `${position.coords.latitude},${position.coords.longitude}`;
+                    window.location.href = `/climate?city=${encodeURIComponent(query)}`;
+                });
+            } else {
+                alert("Geolocation is not supported by your browser");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLiveData();
+            pollInterval = setInterval(fetchLiveData, 10000); 
+            
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.error("Service Worker Failed", err));
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Secure — Live Risk Map</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#a855f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .dashboard-container {
+            padding: 3rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 80px);
+        }
+        
+        .map-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .map-header h1 { 
+            font-size: 3rem; 
+            font-weight: 900; 
+            letter-spacing: -1.5px;
+            background: linear-gradient(to right, #ffffff, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem; 
+        }
+        .map-header p { color: var(--text-secondary); font-size: 1.25rem; font-weight: 500; }
+
+        .map-wrapper {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #live-map {
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            z-index: 10;
+        }
+        
+        /* Custom map tooltips - Premium Glassmorphism */
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: rgba(15, 17, 19, 0.8) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 1.5rem !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+            color: white !important;
+            font-family: 'Inter', sans-serif !important;
+            padding: 1rem !important;
+        }
+        .custom-popup .leaflet-popup-tip {
+            background: rgba(15, 17, 19, 0.8) !important;
+            border: 1px solid var(--glass-border) !important;
+        }
+        .popup-title { 
+            font-weight: 900; 
+            font-size: 1.25rem; 
+            margin-bottom: 0.75rem; 
+            border-bottom: 1px solid var(--glass-border); 
+            padding-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+        .popup-stat { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--text-secondary); }
+        .popup-stat strong { color: white; }
+        .popup-badge { 
+            display: inline-block; 
+            padding: 0.4rem 1rem; 
+            border-radius: 2rem; 
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            color: white; 
+            margin-top: 0.75rem; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1.5rem 1rem; height: calc(100vh - 140px); }
+            .map-header { flex-direction: column; align-items: stretch; gap: 1rem; margin-bottom: 1.5rem; }
+            .map-header h1 { font-size: 2.25rem; }
+            .map-header p { font-size: 1rem; }
+            .map-wrapper { padding: 0.5rem; }
+            .refresh-indicator { bottom: 5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="brand" style="text-decoration:none;">
+            <i class="ph-fill ph-sun-dim"></i>
+            ClimaLens
+        </a>
+        <div class="nav-links">
+            <a href="/">Overview</a>
+            <a href="/climate">Heat Analysis</a>
+            <a href="/aqi">AQI & Pollutants</a>
+            <a href="/map" class="active">Vulnerability Map</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        
+        <div class="map-header">
+            <div>
+                <h1>Risk Matrix Map</h1>
+                <p>Establishing geospatial vulnerability across key monitoring nodes.</p>
+            </div>
+            <div class="badge" style="background: var(--grad-orange); padding: 0.5rem 1.5rem; border-radius: 2rem; font-weight: 700;">Live Sensor Feed</div>
+        </div>
+
+        <div class="map-wrapper">
+            <div id="live-map"></div>
+        </div>
+
+    </div>
+
+    <div class="refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span id="last-updated">Synchronizing...</span>
+    </div>
+
+    <script>
+        let map;
+        let markerLayerGroup;
+
+        function initMap() {
+            // Center roughly on India
+            map = L.map('live-map').setView([21.0, 78.0], 5);
+
+            // DARK THEME map tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            markerLayerGroup = L.layerGroup().addTo(map);
+        }
+
+        async function fetchMapData() {
+            try {
+                const response = await fetch('/api/live/map-markers');
+                const result = await response.json();
+                
+                if (result.markers) {
+                    updateMapMarkers(result.markers);
+                    
+                    const now = new Date();
+                    const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    document.getElementById('last-updated').textContent = `Matrix Live • ${timestamp}`;
+                }
+            } catch (error) {
+                console.error("Failed to fetch map data:", error);
+                document.getElementById('last-updated').textContent = "Matrix Signal Lost... Retrying";
+            }
+        }
+
+        function updateMapMarkers(markers) {
+            markerLayerGroup.clearLayers();
+
+            markers.forEach(site => {
+                const markerHtml = `
+                    <div style="background-color: ${site.color}; width: 22px; height: 22px; 
+                                border-radius: 50%; border: 3px solid rgba(255,255,255,0.4); 
+                                box-shadow: 0 0 20px ${site.color};
+                                opacity: 1;">
+                    </div>
+                `;
+
+                const customIcon = L.divIcon({
+                    html: markerHtml,
+                    className: '',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+
+                const popupHtml = `
+                    <div class="popup-title">${site.city}</div>
+                    <div class="popup-stat"><span>Temp Matrix:</span> <strong>${site.temp}°C</strong></div>
+                    <div class="popup-stat"><span>AQI Index:</span> <strong>${site.aqi}</strong></div>
+                    <div class="popup-stat"><span>Condition:</span> <strong>${site.condition}</strong></div>
+                    <div class="popup-badge" style="background-color: ${site.color}">${site.risk}</div>
+                `;
+
+                L.marker([site.lat, site.lon], { icon: customIcon })
+                 .bindPopup(popupHtml, { className: 'custom-popup', maxWidth: 300 })
+                 .addTo(markerLayerGroup);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            fetchMapData();
+            // Strict 10s auto-refresh per user request
+            setInterval(fetchMapData, 10000);
+
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.error("Service Worker Failed", err));
+            }
+        });
+    </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/">
+            <i class="ph-bold ph-house"></i>
+            <span>Overview</span>
+        </a>
+        <a href="/climate">
+            <i class="ph-bold ph-thermometer"></i>
+            <span>Heat</span>
+        </a>
+        <a href="/aqi">
+            <i class="ph-bold ph-wind"></i>
+            <span>AQI</span>
+        </a>
+        <a href="/map" class="active">
+            <i class="ph-bold ph-map-trifold"></i>
+            <span>Map</span>
+        </a>
+        <a href="/settings">
+            <i class="ph-bold ph-gear"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+</body>
+</html>

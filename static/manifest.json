@@ -1,0 +1,17 @@
+{
+  "name": "ClimaLens — Climate Risk Monitoring",
+  "short_name": "ClimaLens",
+  "description": "Real-time monitoring of Climate Risk, extreme temperature patterns, and air quality.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1113",
+  "theme_color": "#a855f7",
+  "icons": [
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
