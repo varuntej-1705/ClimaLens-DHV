@@ -203,7 +203,8 @@ def api_live_insights():
 
 # ─── Run ──────────────────────────────────────────────────────
 if __name__ == '__main__':
-    print("\n🌍 ClimaLens — Premium Live API Server")
-    print("   Running at http://127.0.0.1:5000\n")
-    # Turn off reloader in development to avoid double-fetching on startup
-    app.run(debug=True, port=5000, use_reloader=False)
+    # Local development server
+    app.run(debug=True, port=5000)
+
+# Export for Vercel serverless
+app = app
