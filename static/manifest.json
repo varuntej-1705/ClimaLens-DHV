@@ -1,6 +1,6 @@
 {
-  "name": "ClimaLens — Climate Risk Monitoring",
-  "short_name": "ClimaLens",
+  "name": "Climora — Climate Risk Monitoring",
+  "short_name": "Climora",
   "description": "Real-time monitoring of Climate Risk, extreme temperature patterns, and air quality.",
   "start_url": "/",
   "display": "standalone",
