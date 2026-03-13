@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClimaLens — Climate Risk & Urban Heat Monitoring</title>
+    <title>Climora — Climate Risk & Urban Heat Monitoring</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#a855f7">
@@ -17,10 +17,10 @@
 
     <!-- Top Navigation -->
     <nav class="navbar">
-        <div class="brand">
-            <i class="ph-fill ph-sun-dim"></i>
-            ClimaLens
-        </div>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='icons/logo.png') }}" alt="Climora">
+            Climora
+        </a>
         <div class="nav-links">
             <a href="/" class="active">Overview</a>
             <a href="/climate">Heat Analysis</a>
