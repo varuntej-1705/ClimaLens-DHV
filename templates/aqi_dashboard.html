@@ -3,97 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Air Secure — Live AQI Predictions & Models</title>
+    <title>Climora — Live AQI & Pollutants</title>
+    <meta name="description" content="Real-time air quality index monitoring with pollutant breakdown for cities across India.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#a855f7">
+    <meta name="theme-color" content="#3B82F6">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
-        .dashboard-container {
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        .city-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .city-title h1 { font-size: 2.5rem; color: var(--text-primary); margin-bottom: 0.5rem; }
-        .city-title p { color: var(--text-secondary); font-size: 1.1rem; }
-        
-        .search-mini {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .search-mini input { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
-        .search-mini button { padding: 0.5rem 1rem; border-radius: 0.5rem; background: var(--accent-blue); color: white; border: none; cursor: pointer; }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .metric-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: var(--card-shadow);
-        }
-
-        .metric-label { font-size: 0.875rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
-        .metric-value { font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem; }
-        .metric-unit { font-size: 0.875rem; color: var(--text-secondary); }
-
-        .chart-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-        }
-        
-        .error-state { color: var(--risk-high); padding: 2rem; text-align: center; }
-
-        .aqi-banner {
-            padding: 2rem;
-            border-radius: 1rem;
-            color: white;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .aqi-banner h2 { font-size: 3rem; margin: 0; }
-        .aqi-banner p { font-size: 1.25rem; opacity: 0.9; margin: 0; }
-
-        .bg-good { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
-        .bg-mod { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
-        .bg-bad { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%); }
-        .bg-sev { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
         @media (max-width: 768px) {
-            .dashboard-container { padding: 1rem; padding-bottom: 5rem; }
-            .city-header { flex-direction: column; align-items: stretch; gap: 1rem; }
-            .city-title h1 { font-size: 2rem; }
-            .aqi-banner { padding: 1.5rem; flex-direction: column; text-align: center; gap: 1rem; }
-            .aqi-banner h2 { font-size: 2.5rem; }
-            .aqi-banner div:last-child { text-align: center !important; }
-            .metric-card { padding: 1rem; }
-            .metric-value { font-size: 1.5rem; }
-            .chart-section { padding: 1rem; }
             #pollutant-bar-chart { height: 300px !important; }
         }
     </style>
@@ -101,9 +22,7 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="brand" style="display: none !important;">
-            Climora
-        </a>
+        <a href="/" class="brand" style="display: none !important;">Climora</a>
         <div class="nav-links">
             <a href="/">Overview</a>
             <a href="/climate">Heat Analysis</a>
@@ -115,14 +34,14 @@
 
     <div class="dashboard-container">
         
-        <div class="city-header" style="border-bottom: 1px solid var(--glass-border); padding: 1rem 0 2rem 0; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 1.5rem !important;">
-            <div class="city-title" style="display: flex !important; align-items: baseline !important; gap: 1rem !important; flex-wrap: wrap !important; width: 100% !important;">
-                <h1 id="ui-city-name" style="font-weight: 800 !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; margin: 0 !important; font-size: 2.2rem !important; display: inline-block !important; line-height: 1 !important;">Loading...</h1>
-                <p id="ui-condition" style="color: var(--text-secondary) !important; font-size: 1.1rem !important; font-weight: 500 !important; margin: 0 !important; display: inline-block !important;">Syncing Matrix...</p>
+        <div class="city-header">
+            <div class="city-title">
+                <h1 id="ui-city-name">Loading...</h1>
+                <p id="ui-condition">Syncing data...</p>
             </div>
-            <div class="search-mini" style="width: 100%; display: flex; gap: 0.75rem;">
-                <input type="text" id="city-search" placeholder="Change city..." onkeypress="if(event.key === 'Enter') searchCity()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; padding: 0.85rem 1.5rem; border-radius: 1rem; flex: 2; min-width: 200px;">
-                <button onclick="searchCity()" class="btn-primary" style="padding: 0.85rem 2rem; border-radius: 1rem; flex: 1; font-weight: 800;">Analyze</button>
+            <div class="search-mini">
+                <input type="text" id="city-search" placeholder="Change city..." onkeypress="if(event.key === 'Enter') searchCity()">
+                <button onclick="searchCity()" class="btn-primary">Analyze</button>
             </div>
         </div>
 
@@ -136,7 +55,7 @@
             </div>
             <div style="text-align:right;">
                 <p id="ui-aqi-status">Status</p>
-                <div style="font-size:3rem; margin-top:0.5rem;"><i id="ui-aqi-icon" class="ph-fill ph-smiley"></i></div>
+                <div style="font-size:2.5rem; margin-top:0.5rem;"><i id="ui-aqi-icon" class="ph-fill ph-smiley"></i></div>
             </div>
         </div>
 
@@ -146,22 +65,22 @@
                 <div class="metric-value" id="ui-pm25">--</div>
                 <div class="metric-unit">µg/m³ (Fine Particles)</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
                 <div class="metric-label">PM10</div>
                 <div class="metric-value" id="ui-pm10">--</div>
                 <div class="metric-unit">µg/m³ (Coarse Particles)</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
                 <div class="metric-label">Nitrogen Dioxide (NO2)</div>
                 <div class="metric-value" id="ui-no2">--</div>
                 <div class="metric-unit">µg/m³</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
                 <div class="metric-label">Ozone (O3)</div>
                 <div class="metric-value" id="ui-o3">--</div>
                 <div class="metric-unit">µg/m³</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
                 <div class="metric-label">Carbon Monoxide (CO)</div>
                 <div class="metric-value" id="ui-co">--</div>
                 <div class="metric-unit">µg/m³</div>
@@ -169,7 +88,7 @@
         </div>
 
         <div class="chart-section">
-            <h2 style="margin-bottom:1rem; font-size:1.25rem;">Live Pollutant Breakdown (10s refresh)</h2>
+            <h2 style="margin-bottom:1rem; font-size:1.15rem; color: var(--text-primary); font-weight: 700;">Live Pollutant Breakdown</h2>
             <div id="pollutant-bar-chart" style="width:100%; height:400px;"></div>
         </div>
 
@@ -197,7 +116,7 @@
                 }
             } catch (error) {
                 console.error(error);
-                showError("Connection lost. Retrying next tick...");
+                showError("Connection lost. Retrying...");
             }
         }
 
@@ -205,7 +124,6 @@
             document.getElementById('ui-city-name').textContent = `${data.City}, ${data.Country}`;
             document.getElementById('ui-condition').textContent = `Local time: ${data.LocalTime} • ${data.Condition}`;
             
-            // AQI Banner Logic
             const aqi = data.AQI;
             const banner = document.getElementById('aqi-banner');
             const statusText = document.getElementById('ui-aqi-status');
@@ -213,7 +131,7 @@
             
             document.getElementById('ui-aqi-main').textContent = aqi;
             
-            banner.className = 'aqi-banner'; // reset
+            banner.className = 'aqi-banner';
             if (aqi <= 50) {
                 banner.classList.add('bg-good');
                 statusText.textContent = "Good / Excellent";
@@ -232,7 +150,6 @@
                 icon.className = "ph-fill ph-warning";
             }
 
-            // Cards
             document.getElementById('ui-pm25').textContent = data.PM25;
             document.getElementById('ui-pm10').textContent = data.PM10;
             document.getElementById('ui-no2').textContent = data.NO2;
@@ -240,7 +157,6 @@
             document.getElementById('ui-co').textContent = data.CO;
             
             document.getElementById('last-updated').textContent = `Live • Updated ${timestamp}`;
-            
             renderCharts(data);
         }
 
@@ -248,29 +164,28 @@
             const chartData = [{
                 type: 'bar',
                 x: ['PM2.5', 'PM10', 'NO2', 'O3', 'CO / 10'],
-                y: [data.PM25, data.PM10, data.NO2, data.Ozone, data.CO / 10], // scaled CO for visibility
+                y: [data.PM25, data.PM10, data.NO2, data.Ozone, data.CO / 10],
                 marker: {
-                    color: ['#a855f7', '#6366f1', '#10b981', '#f59e0b', '#ef4444'],
-                    opacity: 0.9,
-                    line: { width: 0 }
+                    color: ['#6366f1', '#3B82F6', '#22C55E', '#F59E0B', '#EF4444'],
+                    opacity: 0.85
                 }
             }];
 
             const layout = {
                 margin: { t: 20, r: 20, l: 60, b: 60 },
-                paper_bgcolor: "rgba(0,0,0,0)",
-                plot_bgcolor: "rgba(0,0,0,0)",
-                font: { family: "Inter, sans-serif", color: "rgba(255,255,255,0.7)" },
-                yaxis: { title: "µg/m³", gridcolor: "rgba(255,255,255,0.05)", zeroline: false },
-                xaxis: { gridcolor: "transparent", zeroline: false }
+                paper_bgcolor: "white",
+                plot_bgcolor: "white",
+                font: { family: "Inter, sans-serif", color: "#6B7280" },
+                yaxis: { title: "µg/m³", gridcolor: "#E5E7EB", zeroline: false, tickfont: { color: "#6B7280" } },
+                xaxis: { gridcolor: "transparent", zeroline: false, tickfont: { color: "#1F2937", size: 13 } }
             };
 
             Plotly.newPlot('pollutant-bar-chart', chartData, layout, {responsive: true, displayModeBar: false});
         }
 
         function showError(msg) {
-            document.getElementById('error-container').innerHTML = `<div class="error-state" style="background:rgba(239,68,68,0.1); border-radius:1rem; padding:1.5rem; margin-bottom:1.5rem;"><i class="ph-fill ph-warning-circle"></i> ${msg}</div>`;
-            document.getElementById('last-updated').textContent = "Matrix Error";
+            document.getElementById('error-container').innerHTML = `<div class="error-state" style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15); border-radius:1rem; padding:1.25rem; margin-bottom:1.5rem;"><i class="ph-fill ph-warning-circle"></i> ${msg}</div>`;
+            document.getElementById('last-updated').textContent = "Error";
         }
 
         function searchCity() {
@@ -284,7 +199,6 @@
             fetchLiveData();
             setInterval(fetchLiveData, 15000);
 
-            // PWA Service Worker Registration
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
                 .then(() => console.log("Service Worker Registered"))
@@ -292,28 +206,14 @@
             }
         });
     </script>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-nav" style="display: none;">
-        <a href="/">
-            <i class="ph-bold ph-house"></i>
-            <span>Overview</span>
-        </a>
-        <a href="/climate">
-            <i class="ph-bold ph-thermometer"></i>
-            <span>Heat</span>
-        </a>
-        <a href="/aqi" class="active">
-            <i class="ph-bold ph-wind"></i>
-            <span>AQI</span>
-        </a>
-        <a href="/map">
-            <i class="ph-bold ph-map-trifold"></i>
-            <span>Map</span>
-        </a>
-        <a href="/settings">
-            <i class="ph-bold ph-gear"></i>
-            <span>Settings</span>
-        </a>
+        <a href="/"><i class="ph-bold ph-house"></i><span>Overview</span></a>
+        <a href="/climate"><i class="ph-bold ph-thermometer"></i><span>Heat</span></a>
+        <a href="/aqi" class="active"><i class="ph-bold ph-wind"></i><span>AQI</span></a>
+        <a href="/map"><i class="ph-bold ph-map-trifold"></i><span>Map</span></a>
+        <a href="/settings"><i class="ph-bold ph-gear"></i><span>Settings</span></a>
     </nav>
 </body>
 </html>
