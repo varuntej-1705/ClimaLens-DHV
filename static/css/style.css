@@ -54,17 +54,13 @@ body {
     align-items: center;
     gap: 0.75rem;
     font-weight: 800;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     background: var(--grad-purple);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-decoration: none;
-}
-
-.brand img {
-    height: 32px;
-    width: auto;
+    letter-spacing: -1px;
 }
 
 .nav-links {
