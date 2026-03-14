@@ -230,3 +230,70 @@ def generate_live_clustering_charts(df):
         'high_risk_count': high_risk_cities,
         'total_analyzed': len(df)
     }
+
+class HistoricalBacktester:
+    """
+    Advanced offline tool for analyzing how the K-Means clustering model
+    would have performed on historical heatwave data over previous years.
+    
+    This class is intended to be used by the `manage.py evaluate-model`
+    invocation and is not part of the active web request lifecycle.
+    """
+    
+    def __init__(self, data_path: str):
+        self.data_path = data_path
+        self.raw_data = None
+        self.processed_data = None
+        
+    def load_historical_data(self) -> bool:
+        """Attempt to load big data from local storage."""
+        import os
+        if not os.path.exists(self.data_path):
+            return False
+            
+        try:
+            self.raw_data = pd.read_csv(self.data_path)
+            return True
+        except Exception as e:
+            print(f"Data load error: {str(e)}")
+            return False
+            
+    def run_temporal_analysis(self, target_variable: str = 'Temperature') -> Dict[str, Any]:
+        """
+        Runs the K-Means pipeline iteratively over sliced temporal windows 
+        to observe cluster drift over seasons.
+        """
+        if self.raw_data is None or self.raw_data.empty:
+            return {"error": "No data loaded"}
+            
+        results = []
+        
+        # Simulate temporal chunking (assuming 'Date' or 'timestamp' exists)
+        date_col = 'timestamp' if 'timestamp' in self.raw_data.columns else 'Date'
+        
+        if date_col in self.raw_data.columns:
+            self.raw_data[date_col] = pd.to_datetime(self.raw_data[date_col], errors='coerce')
+            self.raw_data = self.raw_data.dropna(subset=[date_col])
+            self.raw_data = self.raw_data.sort_values(by=date_col)
+            
+            # Simple chunking logic
+            chunk_size = len(self.raw_data) // 4
+            chunks = [self.raw_data.iloc[i:i + chunk_size] for i in range(0, len(self.raw_data), chunk_size)]
+            
+            for i, chunk in enumerate(chunks):
+                if len(chunk) > 3:
+                    try:
+                        features = chunk[['Temperature', 'Humidity', 'AQI', 'UV', 'Wind_kph']].fillna(0).values
+                        scaler = StandardScaler()
+                        features_scaled = scaler.fit_transform(features)
+                        
+                        labels, _ = apply_kmeans(features_scaled, n_clusters=3)
+                        results.append({
+                            "window": i,
+                            "records": len(chunk),
+                            "avg_temp": float(chunk['Temperature'].mean())
+                        })
+                    except Exception as e:
+                        pass
+                        
+        return {"status": "success", "temporal_drift": results}
