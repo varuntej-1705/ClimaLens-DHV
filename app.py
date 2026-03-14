@@ -26,8 +26,14 @@ def index():
 
 @app.route('/climate')
 def climate_dashboard():
-    """Real-time Climate Analysis."""
+    """City-specific Climate Analysis."""
     return render_template('climate_dashboard.html', cities=sorted(INDIAN_CITIES))
+
+
+@app.route('/national')
+def national_dashboard():
+    """National Climate Overview."""
+    return render_template('national_dashboard.html', cities=sorted(INDIAN_CITIES))
 
 
 @app.route('/aqi')
@@ -46,15 +52,6 @@ def heat_dashboard():
     """AI clustering and Heat Vulnerability Dashboard."""
     return render_template('heat_dashboard.html', cities=sorted(INDIAN_CITIES))
 
-@app.route('/insights')
-def insights_dashboard():
-    """Adaptation Strategies and Recommendations."""
-    return render_template('insights.html', cities=sorted(INDIAN_CITIES))
-
-@app.route('/settings')
-def settings_page():
-    """System Settings Page."""
-    return render_template('settings.html', cities=sorted(INDIAN_CITIES))
 
 
 # ─── New API Endpoints for Auto-Refresh ───────────────────────
@@ -161,44 +158,6 @@ def api_viz_data():
         "data": processed_df.to_dict('records')
     })
 
-@app.route('/api/live/insights')
-def api_live_insights():
-    """
-    Returns data quality/outlier analysis and general summary statistics
-    for the insights & adaptation strategies page.
-    """
-    bulk_data = get_bulk_indian_cities_data()
-    processed_df = process_live_data(bulk_data)
-    
-    if processed_df.empty:
-        return jsonify({"status": "error", "message": "No data unavailable"}), 400
-        
-    stats = get_live_summary_stats(processed_df)
-    
-    # Calculate Z-score outlier summaries for the UI table
-    outliers = {}
-    for metric in ['Temperature', 'AQI']:
-        if f'Is_Outlier' in processed_df.columns:
-            # We flagged it globally, but for summary we can recalculate quickly 
-            # to show metric-specific counts if we wanted. 
-            # For simplicity, we'll just check if the metric itself is > 3 std devs
-            mean = processed_df[metric].mean()
-            std = processed_df[metric].std()
-            if std > 0:
-                metric_outliers = processed_df[abs(processed_df[metric] - mean) > (3 * std)]
-                count = len(metric_outliers)
-            else:
-                count = 0
-                
-            percent = round((count / len(processed_df)) * 100, 1)
-            outliers[metric] = {"count": count, "percentage": percent}
-            
-    return jsonify({
-        "status": "success",
-        "timestamp": datetime.now().strftime('%I:%M:%S %p'),
-        "stats": stats,
-        "outliers": outliers
-    })
 
 
 # ─── Run ──────────────────────────────────────────────────────

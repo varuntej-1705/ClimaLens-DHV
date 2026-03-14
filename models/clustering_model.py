@@ -112,26 +112,26 @@ def get_clustering_scatter(df, pca_result):
             ))
 
     fig.update_layout(
-        template='none', # Manual dark theme
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
+        template='plotly_white', 
+        paper_bgcolor='white',
+        plot_bgcolor='white',
         title={
             'text': 'K-Means Clustering: Heat Vulnerability Dimensions (PCA)',
-            'font': {'size': 18, 'color': 'white', 'family': 'Inter'}
+            'font': {'size': 18, 'color': '#1F2937', 'family': 'Inter'}
         },
         xaxis={
             'title': 'Principal Component 1 (Heat vs Wind)',
-            'gridcolor': 'rgba(255,255,255,0.05)',
-            'color': 'rgba(255,255,255,0.5)',
+            'gridcolor': '#E5E7EB',
+            'color': '#6B7280',
             'zeroline': False,
         },
         yaxis={
             'title': 'Principal Component 2 (Humidity vs AQI)',
-            'gridcolor': 'rgba(255,255,255,0.05)',
-            'color': 'rgba(255,255,255,0.5)',
+            'gridcolor': '#E5E7EB',
+            'color': '#6B7280',
             'zeroline': False,
         },
-        legend={'font': {'color': 'rgba(255,255,255,0.6)', 'size': 13}},
+        legend={'font': {'color': '#6B7280', 'size': 13}},
         margin={'l': 40, 'r': 20, 't': 50, 'b': 40},
         height=480,
     )
@@ -167,16 +167,16 @@ def get_risk_by_temperature_aqi(df):
             ))
 
     fig.update_layout(
-        template='none', # Manual dark theme
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
+        template='plotly_white',
+        paper_bgcolor='white',
+        plot_bgcolor='white',
         title={
             'text': 'Live Temperature vs AQI mapped to ML Clusters',
-            'font': {'size': 18, 'color': 'white', 'family': 'Inter'}
+            'font': {'size': 18, 'color': '#1F2937', 'family': 'Inter'}
         },
-        xaxis={'title': 'Current Temperature (°C)', 'gridcolor': 'rgba(255,255,255,0.05)', 'color': 'rgba(255,255,255,0.5)'},
-        yaxis={'title': 'Current AQI Estimate', 'gridcolor': 'rgba(255,255,255,0.05)', 'color': 'rgba(255,255,255,0.5)'},
-        legend={'font': {'color': 'rgba(255,255,255,0.6)', 'size': 13}},
+        xaxis={'title': 'Current Temperature (°C)', 'gridcolor': '#E5E7EB', 'color': '#6B7280'},
+        yaxis={'title': 'Current AQI Estimate', 'gridcolor': '#E5E7EB', 'color': '#6B7280'},
+        legend={'font': {'color': '#6B7280', 'size': 13}},
         margin={'l': 40, 'r': 20, 't': 50, 'b': 40},
         height=480,
     )

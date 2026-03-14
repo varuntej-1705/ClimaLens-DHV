@@ -1,17 +1,21 @@
 {
-  "name": "Climora — Climate Risk Monitoring",
+  "name": "Climora — Climate Monitoring",
   "short_name": "Climora",
-  "description": "Real-time monitoring of Climate Risk, extreme temperature patterns, and air quality.",
+  "description": "Real-time Climate Risk & Urban Heat Monitoring",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1113",
-  "theme_color": "#a855f7",
+  "background_color": "#F7F9FC",
+  "theme_color": "#3B82F6",
   "icons": [
     {
-      "src": "/static/icons/icon-512.png",
+      "src": "static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "static/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }

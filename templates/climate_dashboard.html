@@ -3,74 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Climora — Real-time Climate Dashboard</title>
-    <meta name="description" content="Live climate analysis with temperature trends, AQI monitoring, and advanced data visualization tools.">
+    <title>Climora — City Heat Analytics</title>
+    <meta name="description" content="Detailed climate analysis and heat risk assessment for specific cities.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#3B82F6">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-512.png') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
-        .default-viz-grid {
+        .city-viz-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr));
             gap: 1.5rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
-
-        #dynamic-viz-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
-            position: relative;
-        }
-
-        .gen-select {
-            width: 100%;
-            background: #F9FAFB;
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.75rem;
-            border-radius: 0.625rem;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-        }
-
-        .gen-select:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
-
-        .gen-label {
-            display: block;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.4rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
         @media (max-width: 768px) {
-            .default-viz-grid { grid-template-columns: 1fr; }
-            #dynamic-viz-container { min-height: 350px; }
+            .city-viz-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <a href="/" class="brand" style="display: none !important;">Climora</a>
+        <a href="/" class="brand">
+            Climora
+        </a>
         <div class="nav-links">
             <a href="/">Overview</a>
-            <a href="/climate" class="active">Heat Analysis</a>
+            <a href="/national">National Overview</a>
+            <a href="/climate" class="active">City Analysis</a>
             <a href="/aqi">AQI & Pollutants</a>
             <a href="/map">Vulnerability Map</a>
-            <a href="/settings">Settings</a>
         </div>
     </nav>
 
@@ -78,18 +43,18 @@
         
         <div class="city-header">
             <div class="city-title">
-                <h1 id="ui-city-name">Loading...</h1>
-                <p id="ui-condition">Syncing data...</p>
+                <h1 id="ui-city-name">Loading City...</h1>
+                <p id="ui-condition">Acquiring telemetry...</p>
             </div>
             <div class="search-mini">
-                <input type="text" id="city-search" placeholder="Enter city name..." autocomplete="off">
+                <input type="text" id="city-search" placeholder="Enter city name..." autocomplete="off" onkeypress="if(event.key === 'Enter') searchCity()">
                 <button onclick="searchCity()" class="btn-primary">Analyze</button>
             </div>
         </div>
 
         <div id="error-container"></div>
 
-        <!-- Core Metrics Grid -->
+        <!-- City Metrics Grid -->
         <div class="metrics-grid">
             <div class="metric-card">
                 <i class="ph-fill ph-thermometer metric-icon" style="color:#EF4444; background: rgba(239, 68, 68, 0.08);"></i>
@@ -121,100 +86,26 @@
             </div>
         </div>
 
-        <!-- Default 4 Visualizations -->
-        <h2 style="margin-bottom: 1.5rem; font-weight: 700; color: var(--text-primary); font-size: 1.25rem;">Climate Overview</h2>
-        <div class="default-viz-grid">
-            <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Temperature Trend Analysis</h3>
-                <div id="def-viz-temp" style="width:100%; height:350px;"></div>
+        <!-- City Analytics Section -->
+        <h2 style="margin-bottom: 1.5rem; font-weight: 700; color: var(--text-primary); font-size: 1.25rem;">Analytics Profile</h2>
+        <div class="city-viz-grid">
+            <div class="chart-section" style="grid-column: span 1;">
+                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Heat Risk Context</h3>
+                <div id="viz-city-risk" style="width:100%; height:350px;"></div>
             </div>
-            <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">AQI Risk Matrix (National)</h3>
-                <div id="def-viz-aqi" style="width:100%; height:350px;"></div>
-            </div>
-            <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Humidity Distribution</h3>
-                <div id="def-viz-humidity" style="width:100%; height:350px;"></div>
-            </div>
-            <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Heat Risk Index Profile</h3>
-                <div id="def-viz-risk" style="width:100%; height:350px;"></div>
+            <div class="chart-section" style="grid-column: span 1;">
+                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Search Parameter Correlation</h3>
+                <div id="viz-city-pollutants" style="width:100%; height:350px;"></div>
             </div>
         </div>
 
-        <!-- Dynamic Visualization Generator -->
-        <div class="chart-section" style="border: 2px solid var(--accent-blue); padding: 2rem; margin-bottom: 3rem; text-align: center;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <div style="text-align: left;">
-                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; margin-bottom: 0.25rem;">
-                        <i class="ph ph-magic-wand" style="color: var(--accent-blue); margin-right: 0.5rem;"></i>
-                        Advanced Visualization Generator
-                    </h2>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem;">Create custom multidimensional climate visualizations</p>
-                </div>
-                <div class="badge" style="background: var(--grad-blue); color: white; padding: 0.4rem 1rem;">DATA SCIENCE</div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; max-width: 1200px; margin: 0 auto 2rem auto;">
+        <!-- Insights Summary Card -->
+        <div class="strategy-card" style="width: 100%; margin-bottom: 3rem; background: var(--grad-sky); border-color: var(--accent-blue);">
+            <div style="display: flex; gap: 1.5rem; align-items: center;">
+                <i class="ph-bold ph-shield-check" style="font-size: 2.5rem; color: var(--accent-blue);"></i>
                 <div>
-                    <label class="gen-label">Primary Variable (X)</label>
-                    <select id="gen-variable" class="gen-select">
-                        <option value="Temperature">Temperature</option>
-                        <option value="AQI">AQI Index</option>
-                        <option value="Humidity">Humidity</option>
-                        <option value="PM25">PM2.5 Level</option>
-                        <option value="PM10">PM10 Level</option>
-                        <option value="NO2">NO2 Level</option>
-                        <option value="Ozone">Ozone Level</option>
-                        <option value="Heat_Risk_Score">Heat Risk Score</option>
-                    </select>
-                </div>
-                <div id="group-var-y">
-                    <label class="gen-label">Secondary Variable (Y)</label>
-                    <select id="gen-variable-y" class="gen-select">
-                        <option value="AQI">AQI Index</option>
-                        <option value="Temperature">Temperature</option>
-                        <option value="Humidity">Humidity</option>
-                        <option value="PM25">PM2.5 Level</option>
-                        <option value="Heat_Risk_Score">Heat Risk Score</option>
-                        <option value="Wind_kph">Wind Speed</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="gen-label">Chart Type</label>
-                    <select id="gen-type" onchange="toggleSecondaryVar()" class="gen-select">
-                        <option value="bar">Comparative Bar</option>
-                        <option value="scatter">Correlation Scatter</option>
-                        <option value="line">Dual Line Trend</option>
-                        <option value="bubble">Bubble Plot (X, Y, Size)</option>
-                        <option value="violin">Violin Distribution</option>
-                        <option value="polar">Polar Climate Rose</option>
-                        <option value="heatmap">Density Heatmap</option>
-                        <option value="waterfall">Sequential Impact Waterfall</option>
-                        <option value="scatter3d">3D Scatter</option>
-                        <option value="radar">Multivariate Radar</option>
-                        <option value="pie">Distribution Pie (X)</option>
-                        <option value="histogram">Frequency Histogram</option>
-                        <option value="box">Variance Box Plot</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="gen-label">Scope</label>
-                    <select id="gen-scope" class="gen-select">
-                        <option value="national">National</option>
-                        <option value="city">City Focus</option>
-                    </select>
-                </div>
-                <div style="display: flex; align-items: flex-end;">
-                    <button onclick="generateCustomViz()" class="btn-primary" style="width: 100%; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Synthesize</button>
-                </div>
-            </div>
-            
-            <div id="dynamic-viz-container" style="width: 100%; height: 550px; margin-top: 1rem; background: #F9FAFB; border-radius: 1rem; border: 1px solid var(--border-color); overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-                    <i class="ph ph-chart-line-up" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; display: block; margin-left: auto; margin-right: auto;"></i>
-                    <p style="font-size: 1rem; font-weight: 500;">Awaiting parameters...</p>
-                    <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.6;">Select variables to generate analysis</p>
+                    <h3 style="margin: 0; font-size: 1.35rem; color: var(--text-primary);">Vulnerability Assessment</h3>
+                    <p id="ui-risk-assessment" style="margin-top: 0.25rem; color: var(--text-secondary);">Analyzing local conditions for heat and air quality risk...</p>
                 </div>
             </div>
         </div>
@@ -226,297 +117,94 @@
         <span id="last-updated">Updating...</span>
     </div>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" style="display: none;">
+        <a href="/"><i class="ph-bold ph-house"></i><span>Overview</span></a>
+        <a href="/national"><i class="ph-bold ph-globe"></i><span>National</span></a>
+        <a href="/climate" class="active"><i class="ph-bold ph-thermometer"></i><span>City</span></a>
+        <a href="/aqi"><i class="ph-bold ph-wind"></i><span>AQI</span></a>
+        <a href="/map"><i class="ph-bold ph-map-trifold"></i><span>Map</span></a>
+    </nav>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let currentCity = urlParams.get('city') || 'New Delhi';
-        let fullDataset = [];
 
-        // Light theme Plotly layout
         const commonLayout = {
             paper_bgcolor: "white",
             plot_bgcolor: "white",
             font: { family: "Inter, sans-serif", color: "#6B7280", size: 12 },
             margin: { t: 30, r: 20, l: 45, b: 60 },
-            xaxis: { gridcolor: "#E5E7EB", zeroline: false, tickfont: { color: "#6B7280" } },
-            yaxis: { gridcolor: "#E5E7EB", zeroline: false, tickfont: { color: "#6B7280" } }
+            xaxis: { gridcolor: "#E5E7EB", zeroline: false },
+            yaxis: { gridcolor: "#E5E7EB", zeroline: false }
         };
 
-        async function fetchLiveData() {
+        async function fetchCityData() {
             try {
-                const [cityRes, vizRes] = await Promise.all([
+                const [cityRes, summaryRes] = await Promise.all([
                     fetch(`/api/live/city?q=${encodeURIComponent(currentCity)}`).then(r => r.json()),
-                    fetch('/api/viz/data').then(r => r.json())
+                    fetch('/api/live/summary').then(r => r.json())
                 ]);
                 
                 if (cityRes.status === 'success') {
-                    document.getElementById('error-container').innerHTML = '';
                     updateUI(cityRes.data, cityRes.timestamp);
-                    
-                    if (vizRes.status === 'success') {
-                        fullDataset = vizRes.data;
-                        if (!fullDataset.some(d => d.City.toLowerCase() === currentCity.toLowerCase())) {
-                            fullDataset.push(cityRes.data);
-                        }
-                    } else if (fullDataset.length === 0) {
-                        fullDataset = [cityRes.data];
-                    }
-                    
-                    renderDefaultCharts();
-                    const container = document.getElementById('dynamic-viz-container');
-                    if (container.querySelector('i.ph-chart-line-up')) {
-                        generateCustomViz(); 
-                    }
+                    renderCityCharts(cityRes.data, summaryRes.stats);
                 } else {
                     showError(cityRes.message);
                 }
             } catch (error) {
-                console.error("Sync Error:", error);
-                if (fullDataset.length > 0) {
-                    document.getElementById('last-updated').textContent = "Using cached data";
-                } else {
-                    showError("Connection issue. Retrying...");
-                }
+                console.error(error);
             }
         }
 
         function updateUI(data, timestamp) {
-            const cityElem = document.getElementById('ui-city-name');
-            if (cityElem) {
-                cityElem.innerText = data.City || data.city || currentCity || 'Unknown City';
-            }
-            
-            const timeOnly = data.LocalTime ? data.LocalTime.split(' ')[1] : '--:--';
-            const condElem = document.getElementById('ui-condition');
-            if (condElem) {
-                condElem.innerText = `${timeOnly} • ${data.Condition}`;
-            }
-            
+            document.getElementById('ui-city-name').innerText = data.City || currentCity;
+            document.getElementById('ui-condition').innerText = `${data.LocalTime.split(' ')[1]} • ${data.Condition}`;
             document.getElementById('ui-temp').textContent = `${data.Temperature}°C`;
             document.getElementById('ui-humidity').textContent = `${data.Humidity}%`;
             document.getElementById('ui-wind').textContent = `${data.Wind_kph} kph`;
             document.getElementById('ui-uv').textContent = `${data.UV}`;
-            
             document.getElementById('last-updated').textContent = `Live • Updated ${timestamp}`;
-        }
-
-        function renderDefaultCharts() {
-            if (fullDataset.length === 0) return;
-            const cities = fullDataset.map(d => d.City);
-
-            Plotly.newPlot('def-viz-temp', [{
-                x: cities, y: fullDataset.map(d => d.Temperature), type: 'bar', marker: { color: '#EF4444', opacity: 0.85 }
-            }], {...commonLayout}, {responsive: true, displayModeBar: false});
-
-            Plotly.newPlot('def-viz-aqi', [{
-                x: cities, y: fullDataset.map(d => d.AQI), type: 'scatter', mode: 'lines+markers', line: { color: '#22C55E', shape: 'spline', width: 2 }, marker: { size: 6 }
-            }], {...commonLayout}, {responsive: true, displayModeBar: false});
-
-            Plotly.newPlot('def-viz-humidity', [{
-                y: fullDataset.map(d => d.Humidity), type: 'box', name: 'Humidity %', marker: { color: '#3B82F6' }, line: { color: '#3B82F6' }
-            }], {...commonLayout}, {responsive: true, displayModeBar: false});
-
-            const cityData = fullDataset.find(d => d.City.toLowerCase() === currentCity.toLowerCase()) || fullDataset[0];
-            const natAvg = fullDataset.reduce((a, b) => a + b.Heat_Risk_Score, 0) / fullDataset.length;
-            Plotly.newPlot('def-viz-risk', [{
-                x: [cityData.City, 'National Avg'], 
-                y: [cityData.Heat_Risk_Score, natAvg], 
-                type: 'bar', marker: { color: ['#6366f1', '#E5E7EB'] }
-            }], {...commonLayout}, {responsive: true, displayModeBar: false});
-        }
-
-        function toggleSecondaryVar() {
-            const type = document.getElementById('gen-type').value;
-            const groupY = document.getElementById('group-var-y');
-            const needsDual = ['bar', 'scatter', 'line', 'bubble', 'radar', 'violin', 'heatmap', 'box'].includes(type);
-            groupY.style.opacity = needsDual ? '1' : '0.3';
-            groupY.style.pointerEvents = needsDual ? 'all' : 'none';
-        }
-
-        async function generateCustomViz() {
-            const container = document.getElementById('dynamic-viz-container');
-            container.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; gap:0.75rem;"><div class="pulse-dot" style="width:20px; height:20px; background:var(--accent-blue);"></div><div style="color:var(--accent-blue); font-weight:700; letter-spacing:1px; text-transform:uppercase; font-size:0.8rem;">Generating...</div></div>';
             
-            try {
-                const varX = document.getElementById('gen-variable').value;
-                const varY = document.getElementById('gen-variable-y').value;
-                const type = document.getElementById('gen-type').value;
-                const scope = document.getElementById('gen-scope').value;
-                const needsDual = ['bar', 'scatter', 'line', 'bubble', 'radar', 'violin', 'heatmap', 'box'].includes(type);
-                
-                await new Promise(r => setTimeout(r, 600));
-                
-                if (fullDataset.length === 0) { location.reload(); return; }
-
-                let dataToUse = fullDataset;
-                if (scope === 'city') {
-                    dataToUse = fullDataset.filter(d => d.City.toLowerCase() === currentCity.toLowerCase());
-                    if (dataToUse.length === 0) dataToUse = [fullDataset[0]];
-                }
-
-                dataToUse.sort((a, b) => b[varX] - a[varX]);
-
-                const xLabels = dataToUse.map(d => d.City);
-                const xValues = dataToUse.map(d => d[varX]);
-                const yValues = dataToUse.map(d => d[varY]);
-                
-                const vizLayout = {
-                    paper_bgcolor: "white",
-                    plot_bgcolor: "white",
-                    font: { family: "Inter, sans-serif", color: "#6B7280" },
-                    margin: { t: 50, r: 30, l: 60, b: 100 },
-                    xaxis: { gridcolor: "#E5E7EB", zeroline: false, title: scope === 'national' ? 'Cities' : varX, tickfont: { color: "#6B7280" } },
-                    yaxis: { gridcolor: "#E5E7EB", zeroline: false, title: varY, tickfont: { color: "#6B7280" } }
-                };
-
-                container.innerHTML = '';
-                const chartDiv = document.createElement('div');
-                chartDiv.style.width = '100%';
-                chartDiv.style.height = '100%';
-                container.appendChild(chartDiv);
-
-                let plotData = [];
-                
-                if (type === 'bar') {
-                    plotData = [
-                        { x: xLabels, y: xValues, name: varX, type: 'bar', marker: { color: '#3B82F6' } },
-                        { x: xLabels, y: yValues, name: varY, type: 'bar', marker: { color: '#22C55E' } }
-                    ];
-                    vizLayout.barmode = 'group';
-                } else if (type === 'scatter') {
-                    plotData = [{
-                        x: xValues, y: yValues, mode: 'markers+text',
-                        text: xLabels, textposition: 'top center',
-                        marker: { size: 12, color: '#F59E0B', line: { color: '#E5E7EB', width: 1 } },
-                        type: 'scatter'
-                    }];
-                    vizLayout.xaxis.title = varX;
-                    vizLayout.yaxis.title = varY;
-                } else if (type === 'line') {
-                    plotData = [
-                        { x: xLabels, y: xValues, name: varX, mode: 'lines+markers', line: { color: '#EF4444', width: 2.5, shape: 'spline' } },
-                        { x: xLabels, y: yValues, name: varY, mode: 'lines+markers', line: { color: '#3B82F6', width: 2.5, shape: 'spline' } }
-                    ];
-                } else if (type === 'bubble') {
-                    plotData = [{
-                        x: xValues, y: yValues, mode: 'markers',
-                        marker: {
-                            size: dataToUse.map(d => (d.Heat_Risk_Score || 1) * 2),
-                            color: dataToUse.map(d => d.AQI),
-                            colorscale: 'Blues', showscale: true
-                        },
-                        text: xLabels, type: 'scatter'
-                    }];
-                    vizLayout.xaxis.title = varX;
-                    vizLayout.yaxis.title = varY;
-                } else if (type === 'violin') {
-                    plotData = [{
-                        type: 'violin', y: xValues, points: 'all',
-                        box: { visible: true }, meanline: { visible: true },
-                        line: { color: '#3B82F6' }, fillcolor: 'rgba(59, 130, 246, 0.15)', name: varX
-                    }];
-                    if (needsDual) {
-                        plotData.push({
-                            type: 'violin', y: yValues, points: 'all',
-                            box: { visible: true }, meanline: { visible: true },
-                            line: { color: '#22C55E' }, fillcolor: 'rgba(34, 197, 94, 0.15)', name: varY
-                        });
-                    }
-                } else if (type === 'polar') {
-                    plotData = [{
-                        type: 'scatterpolar', r: xValues, theta: xLabels,
-                        fill: 'toself', marker: { color: '#3B82F6' }, name: varX
-                    }];
-                    vizLayout.polar = { bgcolor: '#FAFBFC', radialaxis: { visible: true, gridcolor: '#E5E7EB' } };
-                } else if (type === 'heatmap') {
-                    plotData = [{
-                        x: xValues, y: yValues, type: 'histogram2dcontour',
-                        colorscale: 'Blues', reversescale: false, showscale: true
-                    }];
-                    vizLayout.xaxis.title = varX;
-                    vizLayout.yaxis.title = varY;
-                } else if (type === 'waterfall') {
-                    const cd = dataToUse[0];
-                    plotData = [{
-                        type: 'waterfall', orientation: 'v',
-                        measure: ['relative', 'relative', 'relative', 'relative', 'total'],
-                        x: ['Temperature', 'Humidity', 'AQI', 'Wind Speed', 'Heat Risk'],
-                        y: [cd.Temperature, cd.Humidity / 2, cd.AQI / 10, cd.Wind_kph, cd.Heat_Risk_Score],
-                        connector: { line: { color: '#E5E7EB' } },
-                        decreasing: { marker: { color: '#EF4444' } },
-                        increasing: { marker: { color: '#22C55E' } },
-                        totals: { marker: { color: '#3B82F6' } }
-                    }];
-                } else if (type === 'scatter3d') {
-                    plotData = [{
-                        x: xValues, y: yValues, z: dataToUse.map(d => d.Heat_Risk_Score),
-                        mode: 'markers',
-                        marker: { size: 5, color: dataToUse.map(d => d.AQI), colorscale: 'Blues', opacity: 0.85 },
-                        type: 'scatter3d', text: xLabels
-                    }];
-                    vizLayout.scene = {
-                        xaxis: { title: varX, gridcolor: '#E5E7EB' },
-                        yaxis: { title: varY, gridcolor: '#E5E7EB' },
-                        zaxis: { title: 'Heat Risk', gridcolor: '#E5E7EB' },
-                        bgcolor: 'white'
-                    };
-                } else if (type === 'radar') {
-                    const metrics = [varX, varY, 'Temperature', 'AQI', 'Humidity'].slice(0, 5);
-                    plotData = dataToUse.slice(0, 5).map((city) => ({
-                        type: 'scatterpolar', r: metrics.map(m => city[m]),
-                        theta: metrics, fill: 'toself', name: city.City
-                    }));
-                    vizLayout.polar = { bgcolor: '#FAFBFC', radialaxis: { visible: true, gridcolor: '#E5E7EB' } };
-                } else if (type === 'pie') {
-                    plotData = [{ labels: xLabels, values: xValues, type: 'pie', hole: 0.55, marker: { colors: ['#3B82F6','#22C55E','#F59E0B','#EF4444','#6366f1','#8B5CF6','#EC4899','#14B8A6'] } }];
-                } else if (type === 'histogram') {
-                    plotData = [{ x: xValues, type: 'histogram', marker: { color: '#3B82F6' }, nbinsx: 15 }];
-                    vizLayout.xaxis.title = varX;
-                } else if (type === 'box') {
-                    plotData = [
-                        { y: xValues, type: 'box', name: varX, marker: { color: '#3B82F6' } },
-                        { y: yValues, type: 'box', name: varY, marker: { color: '#22C55E' } }
-                    ];
-                }
-
-                Plotly.newPlot(chartDiv, plotData, vizLayout, {responsive: true, displayModeBar: false});
-            } catch (err) {
-                console.error("Generator Error:", err);
-                container.innerHTML = '<div style="color:#EF4444; font-weight:600; padding:2rem;">Visualization error. Check console.</div>';
-            }
+            const risk = data.Heat_Risk_Score;
+            let assessment = "";
+            if (risk > 75) assessment = "CRITICAL: Extreme heat exposure detected. Immediate urban cooling strategies recommended.";
+            else if (risk > 50) assessment = "WARNING: Significant heat stress vulnerability. Monitor air quality and maintain public hydration.";
+            else assessment = "STABLE: Standard climate conditions for urban habitation. Low current vulnerability.";
+            document.getElementById('ui-risk-assessment').innerText = assessment;
         }
 
-        function showError(msg) {
-            document.getElementById('error-container').innerHTML = `<div class="error-state" style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15); border-radius:1rem; padding:1.25rem; margin-bottom:1.5rem;"><i class="ph-fill ph-warning-circle" style="font-size:1.25rem; margin-right:0.5rem; vertical-align:middle;"></i> ${msg}</div>`;
-            document.getElementById('last-updated').textContent = "Error";
+        function renderCityCharts(cityData, stats) {
+            const avgRisk = stats.avg_risk || 50;
+            Plotly.newPlot('viz-city-risk', [{
+                x: [cityData.City, 'National Avg'], 
+                y: [cityData.Heat_Risk_Score, avgRisk], 
+                type: 'bar', 
+                marker: { color: ['#3B82F6', '#E5E7EB'] }
+            }], commonLayout, {responsive: true, displayModeBar: false});
+
+            Plotly.newPlot('viz-city-pollutants', [{
+                type: 'pie',
+                labels: ['PM2.5', 'PM10', 'NO2', 'Ozone'],
+                values: [cityData.PM25, cityData.PM10, cityData.NO2, cityData.Ozone],
+                hole: 0.6,
+                marker: { colors: ['#EF4444', '#F59E0B', '#22C55E', '#3B82F6'] }
+            }], commonLayout, {responsive: true, displayModeBar: false});
         }
 
         function searchCity() {
             const query = document.getElementById('city-search').value;
-            if (query.trim() !== '') {
-                window.location.href = `/climate?city=${encodeURIComponent(query)}`;
-            }
+            if (query.trim() !== '') window.location.href = `/climate?city=${encodeURIComponent(query)}`;
+        }
+
+        function showError(msg) {
+            document.getElementById('error-container').innerHTML = `<div class="error-state">${msg}</div>`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            fetchLiveData();
-            toggleSecondaryVar();
-            setInterval(fetchLiveData, 15000); 
-
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register("{{ url_for('static', filename='js/sw.js') }}")
-                .then(() => console.log("Service Worker Registered"))
-                .catch(err => console.error("Service Worker Failed", err));
-            }
+            fetchCityData();
+            setInterval(fetchCityData, 15000);
         });
     </script>
-
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-nav" style="display: none;">
-        <a href="/"><i class="ph-bold ph-house"></i><span>Overview</span></a>
-        <a href="/climate" class="active"><i class="ph-bold ph-thermometer"></i><span>Heat</span></a>
-        <a href="/aqi"><i class="ph-bold ph-wind"></i><span>AQI</span></a>
-        <a href="/map"><i class="ph-bold ph-map-trifold"></i><span>Map</span></a>
-        <a href="/settings"><i class="ph-bold ph-gear"></i><span>Settings</span></a>
-    </nav>
 </body>
 </html>

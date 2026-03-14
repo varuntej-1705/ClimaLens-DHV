@@ -3,28 +3,31 @@
 :root {
     /* ─── Light Weather-App Palette ─── */
     --bg-primary: #F7F9FC;
-    --bg-card: #FFFFFF;
-    --border-color: #E5E7EB;
-    --glass-border: #E5E7EB;
+    --bg-card: rgba(255, 255, 255, 0.25);
+    --border-color: rgba(255, 255, 255, 0.35);
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --glass-blur: blur(14px);
+    --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 
-    --text-primary: #1F2937;
-    --text-secondary: #6B7280;
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.82);
 
-    --accent-blue: #3B82F6;
+    --accent-blue: #4F9CF9;
     --accent-green: #22C55E;
-    --accent-purple: #6366f1;
+    --accent-purple: #6F7CFF;
     --risk-high: #EF4444;
     --risk-medium: #F59E0B;
     --risk-low: #10B981;
 
     --grad-sky: linear-gradient(135deg, #E8F3FF 0%, #F7FAFF 100%);
-    --grad-blue: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    --grad-blue: linear-gradient(90deg, #4F9CF9, #6F7CFF);
     --grad-green: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
     --grad-orange: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
 
-    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
-    --border-radius: 1rem;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.2);
+    --border-radius-lg: 24px;
+    --border-radius-md: 14px;
 }
 
 * {
@@ -35,11 +38,34 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg-primary);
+    background-color: #000;
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
+    transition: background-image 0.8s ease-in-out;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
+}
+
+.bg-sunny { background-image: url('../sunny.png'); }
+.bg-rainy { background-image: url('../rainy.png'); }
+.bg-cloudy { background-image: url('../cloudy.png'); }
+.bg-storm { background-image: url('../storm.png'); }
+.bg-heatwave { background-image: url('../heatwave.png'); }
+.bg-cold { background-image: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); }
+
 
 /* ─── Top Navbar ─── */
 .navbar {
@@ -47,12 +73,13 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .brand {
@@ -103,21 +130,26 @@ body {
 }
 
 .hero-banner {
-    background: linear-gradient(rgba(247, 249, 252, 0.8), rgba(247, 249, 252, 0.85)), url('../hero_bg.png');
-    background-size: cover;
-    background-position: center;
-    border-radius: 1.5rem;
-    padding: 4rem 2rem;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border-radius: var(--border-radius-lg);
+    padding: 3rem 2rem;
     text-align: center;
     position: relative;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    box-shadow: var(--card-shadow);
+    box-shadow: var(--glass-shadow);
     margin-bottom: 2.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
+    transition: transform 0.3s ease;
 }
+
+.hero-banner:hover {
+    transform: translateY(-4px);
+}
+
 
 .hero-banner::before {
     content: '';
@@ -241,11 +273,13 @@ body {
 
 .leaderboard-section {
     background: var(--bg-card);
-    border-radius: var(--border-radius);
+    backdrop-filter: var(--glass-blur);
+    border-radius: var(--border-radius-lg);
     padding: 2rem;
     border: 1px solid var(--border-color);
-    box-shadow: var(--card-shadow);
+    box-shadow: var(--glass-shadow);
 }
+
 
 .section-header {
     display: flex;
@@ -276,9 +310,9 @@ body {
     display: flex;
     align-items: center;
     padding: 1rem 1.25rem;
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
+    border-radius: var(--border-radius-md);
     transition: all 0.2s ease;
     cursor: pointer;
 }
