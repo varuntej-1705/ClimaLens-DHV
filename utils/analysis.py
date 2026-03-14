@@ -1,12 +1,26 @@
 """
-Climora — Heatwave Trend Analysis Module
-Analyzes temperature trends, seasonal patterns, and heatwave events.
+Climora — Heatwave Trend Analysis & Data Visualization Module
+=============================================================
+
+This module provides the core data visualization generation capabilities 
+for the frontend dashboards. It ingests preprocessed Pandas DataFrames 
+and yields highly customized, responsive Plotly JSON object definitions.
+
+Key Features:
+- Temperature and Humidity Time-Series Analysis
+- Extreme Weather Event (Heatwave) Threshold Detection
+- Risk Categorization Distribution Modeling
+- Seasonal Box-Plot Distributive Analytics
+
+Version: 2.1.0
+Dependencies: pandas, plotly
 """
 
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from typing import Dict, Any, Optional, List, Union
 import json
 
 

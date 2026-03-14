@@ -1,7 +1,24 @@
+"""
+Climora — Enterprise Web Interface and API layer
+================================================
+
+This module acts as the primary FastAPI/Flask hybrid routing gateway for
+the Climora climate intelligence application. It serves both the rendered
+HTML templates for the frontend dashboards and provides a robust json API
+for asynchronous live data fetching.
+
+Endpoints are broadly grouped into:
+1. Standard Page Routes (/, /climate, /heat, etc.)
+2. API Routes (/api/live/*) which interact with the upstream data 
+   retrieval layers, handle aggregation, and serve JSON.
+
+Version: 2.1.0
+"""
 import os
 import time
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request
+from typing import Dict, Any, Tuple, Union
 from dotenv import load_dotenv
 
 from utils.api_fetch import get_live_city_data, get_bulk_indian_cities_data, INDIAN_CITIES

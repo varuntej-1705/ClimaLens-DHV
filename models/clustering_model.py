@@ -1,7 +1,21 @@
 """
-Climora — ML Clustering Model (Live Data Adaptation)
-PCA dimensionality reduction + K-Means clustering to classify
-urban areas into heat vulnerability risk levels.
+Climora — Machine Learning Clustering Engine (Live Data Adaptation)
+===================================================================
+
+This module implements the core artificial intelligence engine for the 
+Climora application. It utilizes unsupervised machine learning techniques 
+to classify urban areas into dynamic heat vulnerability risk levels 
+based on a composite synthesis of meteorological and ambient data.
+
+Algorithm Pipeline:
+1. Feature Scaling (Standardization) to normalize disparate metrics (Temp, AQI, Wind).
+2. Principal Component Analysis (PCA) for dimensionality reduction to isolate the 
+   most significant variance axes (usually Heat/Wind vs Humidity/AQI).
+3. K-Means Clustering on the reduced feature space to dynamically group 
+   cities sharing similar risk profiles without relying on static thresholds.
+
+Version: 2.1.0
+Author: Climora Data Science Team
 """
 
 import pandas as pd
@@ -10,7 +24,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import plotly.graph_objects as go
+from typing import Tuple, List, Dict, Any, Optional
 import json
+
 
 
 def prepare_live_features(df):
