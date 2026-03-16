@@ -78,51 +78,45 @@
 
     <div class="dashboard-container">
         
-        <div class="dashboard-header" style="border-bottom: 2px solid var(--accent-blue); padding-bottom: 2rem; margin-bottom: 3rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                <i class="ph-bold ph-globe-hemisphere-east" style="font-size: 2.5rem; color: var(--accent-blue);"></i>
-                <h1 style="margin: 0;">National Overview</h1>
-            </div>
-            <p>Real-time national climate trends, risk matrices, and advanced data exploration tools.</p>
+        <div class="dashboard-header">
+            <h1>National Overview</h1>
+            <p>Live national climate telemetry and risk matrices.</p>
         </div>
 
         <!-- Default 4 Visualizations (National) -->
-        <h2 style="margin-bottom: 1.5rem; font-weight: 700; color: var(--text-primary); font-size: 1.25rem;">National Climate Trends</h2>
+        <div class="section-label">National Trends</div>
         <div class="default-viz-grid">
             <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Full Temperature Comparison</h3>
-                <div id="def-viz-temp" style="width:100%; height:350px;"></div>
+                <h3 class="viz-title">Temperature Gradient</h3>
+                <div id="def-viz-temp" style="width:100%; height:320px;"></div>
             </div>
             <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">AQI Risk Profile (24h)</h3>
-                <div id="def-viz-aqi" style="width:100%; height:350px;"></div>
+                <h3 class="viz-title">AQI Risk (24h)</h3>
+                <div id="def-viz-aqi" style="width:100%; height:320px;"></div>
             </div>
             <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Humidity Distribution</h3>
-                <div id="def-viz-humidity" style="width:100%; height:350px;"></div>
+                <h3 class="viz-title">Humidity Variance</h3>
+                <div id="def-viz-humidity" style="width:100%; height:320px;"></div>
             </div>
             <div class="chart-section">
-                <h3 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">Average Heat Risk vs Local Minima</h3>
-                <div id="def-viz-risk" style="width:100%; height:350px;"></div>
+                <h3 class="viz-title">Thermal Resilience</h3>
+                <div id="def-viz-risk" style="width:100%; height:320px;"></div>
             </div>
         </div>
 
         <!-- Dynamic Visualization Generator -->
-        <div class="chart-section" style="border: 2px solid var(--accent-blue); padding: 2rem; margin-bottom: 3rem; text-align: center;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <div style="text-align: left;">
-                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; margin-bottom: 0.25rem;">
-                        <i class="ph ph-magic-wand" style="color: var(--accent-blue); margin-right: 0.5rem;"></i>
-                        Advanced Visualization Generator
-                    </h2>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem;">Synthesize multidimensional climate models from national live data telemetry</p>
+        <div class="chart-section generator-card">
+            <div class="generator-header">
+                <div>
+                    <h2>Data Engine</h2>
+                    <p>Multidimensional visualization generator</p>
                 </div>
-                <div class="badge" style="background: var(--grad-blue); color: white; padding: 0.4rem 1rem;">DATA ENGINE</div>
+                <i class="ph ph-magic-wand icon-glow"></i>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; max-width: 1200px; margin: 0 auto 2rem auto;">
-                <div>
-                    <label class="gen-label">Primary Variable (X)</label>
+            <div class="generator-controls">
+                <div class="control-group">
+                    <label class="gen-label">Primary Axis</label>
                     <select id="gen-variable" class="gen-select">
                         <option value="Temperature">Temperature</option>
                         <option value="AQI">AQI Index</option>
@@ -134,8 +128,8 @@
                         <option value="Heat_Risk_Score">Heat Risk Score</option>
                     </select>
                 </div>
-                <div id="group-var-y">
-                    <label class="gen-label">Secondary Variable (Y)</label>
+                <div id="group-var-y" class="control-group">
+                    <label class="gen-label">Secondary Axis</label>
                     <select id="gen-variable-y" class="gen-select">
                         <option value="AQI">AQI Index</option>
                         <option value="Temperature">Temperature</option>
@@ -145,10 +139,12 @@
                         <option value="Wind_kph">Wind Speed</option>
                     </select>
                 </div>
-                <div>
-                    <label class="gen-label">Chart Type</label>
+                <div class="control-group">
+                    <label class="gen-label">Model Type</label>
                     <select id="gen-type" onchange="toggleSecondaryVar()" class="gen-select">
                         <option value="bar">Comparative Bar</option>
+                        <option value="hbar">Horizontal Profile</option>
+                        <option value="area">Stacked Area model</option>
                         <option value="scatter">Correlation Scatter</option>
                         <option value="line">Dual Line Trend</option>
                         <option value="bubble">Bubble Plot (X, Y, Size)</option>
@@ -160,34 +156,37 @@
                         <option value="pie">Distribution Pie (X)</option>
                         <option value="histogram">Frequency Histogram</option>
                         <option value="box">Variance Box Plot</option>
+                        <option value="ternary">Ternary Correlation</option>
+                        <option value="parcoords">Parallel Coordinates</option>
+                        <option value="sunburst">Hierarchy Sunburst</option>
+                        <option value="treemap">Landscape Treemap</option>
+                        <option value="funnel">Risk Funnel</option>
                     </select>
                 </div>
-                <div style="display: flex; align-items: flex-end;">
-                    <button onclick="generateCustomViz()" class="btn-primary" style="width: 100%; font-weight: 700; text-transform: uppercase;">Synthesize Models</button>
+                <div class="control-group action-group">
+                    <button onclick="generateCustomViz()" class="btn-primary">Generate</button>
                 </div>
             </div>
             
-            <div id="dynamic-viz-container" style="width: 100%; height: 550px; margin-top: 1rem; background: #F9FAFB; border-radius: 1rem; border: 1px solid var(--border-color); overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-                    <i class="ph ph-cpu" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; display: block; margin-left: auto; margin-right: auto;"></i>
-                    <p style="font-size: 1rem; font-weight: 500;">Awaiting multidimensional parameters...</p>
+            <div id="dynamic-viz-container" class="viz-output-container">
+                <div class="placeholder-state">
+                    <i class="ph ph-cpu"></i>
+                    <p>Select parameters to synthesize model</p>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <div class="refresh-indicator">
+    <div class="refresh-indicator" title="Live">
         <div class="pulse-dot"></div>
-        <span id="last-updated">Updating...</span>
     </div>
 
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-nav" style="display: none;">
         <a href="/"><i class="ph-bold ph-house"></i><span>Overview</span></a>
         <a href="/national" class="active"><i class="ph-bold ph-globe"></i><span>National</span></a>
-        <a href="/climate"><i class="ph-bold ph-thermometer"></i><span>City</span></a>
-        <a href="/aqi"><i class="ph-bold ph-wind"></i><span>AQI</span></a>
+        <a href="/city-insight"><i class="ph-bold ph-chart-line-up"></i><span>Insight</span></a>
         <a href="/map"><i class="ph-bold ph-map-trifold"></i><span>Map</span></a>
     </nav>
 
@@ -250,7 +249,7 @@
         function toggleSecondaryVar() {
             const type = document.getElementById('gen-type').value;
             const groupY = document.getElementById('group-var-y');
-            const needsDual = ['bar', 'scatter', 'line', 'bubble', 'radar', 'violin', 'heatmap', 'box'].includes(type);
+            const needsDual = ['bar', 'hbar', 'area', 'scatter', 'line', 'bubble', 'radar', 'violin', 'heatmap', 'box', 'ternary', 'funnel'].includes(type);
             groupY.style.opacity = needsDual ? '1' : '0.3';
             groupY.style.pointerEvents = needsDual ? 'all' : 'none';
         }
@@ -299,6 +298,19 @@
                         { x: xLabels, y: yValues, name: varY, type: 'bar', marker: { color: '#22C55E' } }
                     ];
                     vizLayout.barmode = 'group';
+                } else if (type === 'hbar') {
+                    plotData = [
+                        { y: xLabels, x: xValues, name: varX, type: 'bar', orientation: 'h', marker: { color: '#3B82F6' } },
+                        { y: xLabels, x: yValues, name: varY, type: 'bar', orientation: 'h', marker: { color: '#22C55E' } }
+                    ];
+                    vizLayout.barmode = 'group';
+                    vizLayout.xaxis.title = "Value";
+                    vizLayout.yaxis.title = "Cities";
+                } else if (type === 'area') {
+                    plotData = [
+                        { x: xLabels, y: xValues, name: varX, fill: 'tozeroy', type: 'scatter', line: {color: '#3B82F6'} },
+                        { x: xLabels, y: yValues, name: varY, fill: 'tonexty', type: 'scatter', line: {color: '#22C55E'} }
+                    ];
                 } else if (type === 'scatter') {
                     plotData = [{
                         x: xValues, y: yValues, mode: 'markers+text',
@@ -378,6 +390,61 @@
                         { y: xValues, type: 'box', name: varX, marker: { color: '#3B82F6' } },
                         { y: yValues, type: 'box', name: varY, marker: { color: '#22C55E' } }
                     ];
+                } else if (type === 'ternary') {
+                    plotData = [{
+                        type: 'scatterternary',
+                        mode: 'markers',
+                        a: xValues,
+                        b: yValues,
+                        c: dataToUse.map(d => d.Humidity),
+                        text: xLabels,
+                        marker: { symbol: 100, color: '#3B82F6', size: 10 }
+                    }];
+                    vizLayout.ternary = {
+                        aaxis: { title: varX, min: 0, linewidth: 2, gridcolor: '#E5E7EB' },
+                        baxis: { title: varY, min: 0, linewidth: 2, gridcolor: '#E5E7EB' },
+                        caxis: { title: 'Humidity', min: 0, linewidth: 2, gridcolor: '#E5E7EB' }
+                    };
+                } else if (type === 'parcoords') {
+                    plotData = [{
+                        type: 'parcoords',
+                        line: { color: dataToUse.map(d => d.Heat_Risk_Score), colorscale: 'Portland', showscale: true },
+                        dimensions: [
+                            { range: [0, 50], label: 'Temp', values: dataToUse.map(d => d.Temperature) },
+                            { range: [0, 500], label: 'AQI', values: dataToUse.map(d => d.AQI) },
+                            { range: [0, 100], label: 'Humidity', values: dataToUse.map(d => d.Humidity) },
+                            { range: [0, 100], label: 'Risk', values: dataToUse.map(d => d.Heat_Risk_Score) }
+                        ]
+                    }];
+                } else if (type === 'sunburst' || type === 'treemap') {
+                    const regions = [...new Set(dataToUse.map(d => d.Region))];
+                    const ids = ['National', ...regions, ...dataToUse.map(d => d.City)];
+                    const labels = ['National', ...regions, ...dataToUse.map(d => d.City)];
+                    const parents = ['', ...regions.map(() => 'National'), ...dataToUse.map(d => d.Region)];
+                    const values = [
+                        dataToUse.reduce((s, d) => s + d[varX], 0),
+                        ...regions.map(r => dataToUse.filter(d => d.Region === r).reduce((s, d) => s + d[varX], 0)),
+                        ...dataToUse.map(d => d[varX])
+                    ];
+                    plotData = [{
+                        type: type,
+                        ids: ids,
+                        labels: labels,
+                        parents: parents,
+                        values: values,
+                        branchvalues: 'total',
+                        marker: { colorscale: 'Blues' }
+                    }];
+                } else if (type === 'funnel') {
+                    const categories = ['Hazardous', 'Unhealthy', 'Moderate', 'Good'];
+                    const counts = categories.map(cat => dataToUse.filter(d => d.Pollution_Category === cat).length);
+                    plotData = [{
+                        type: 'funnel',
+                        y: categories,
+                        x: counts,
+                        textinfo: "value+percent initial",
+                        marker: { color: ['#EF4444', '#F59E0B', '#3B82F6', '#22C55E'] }
+                    }];
                 }
 
                 Plotly.newPlot(chartDiv, plotData, vizLayout, {responsive: true, displayModeBar: false});
